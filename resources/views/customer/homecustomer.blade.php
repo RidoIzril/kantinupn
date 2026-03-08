@@ -34,12 +34,12 @@
 
                 {{-- HEADER PENJUAL --}}
                 <div class="flex gap-4">
-                    <img src="{{ asset('storage/'.$penjual->logo) }}"
-                         class="w-16 h-16 rounded-lg object-cover">
+                    <img src="{{ asset('storage/'.$penjual->foto_tenant) }}"
+                         class="w-20 h-20 rounded-lg object-cover">
 
                     <div class="flex-1">
-                        <h3 class="font-semibold text-slate-800">
-                            {{ $penjual->penjual_name }}
+                        <h3 class="font-bold text-2xl text-slate-800">
+                            {{ $penjual->penjual_tenantname }}
                         </h3>
 
                         <p class="text-sm text-slate-500">
@@ -71,10 +71,9 @@
                 {{-- FOOTER --}}
                 <div class="mt-4 text-right">
                     <a href="{{ route('customer.menu.show', $penjual->penjual_id) }}"
-   class="text-green-600 text-sm font-semibold">
-    Lihat Penjual →
-</a>
-
+                    class="text-green-600 text-sm font-semibold">
+                    Lihat Penjual →
+                    </a>
                 </div>
 
             </div>

@@ -15,7 +15,7 @@
                 class="w-24 h-24 rounded-xl object-cover">
 
             <div>
-                <h1 class="text-2xl font-bold text-gray-800">
+                <h1 class="text-3xl font-bold text-gray-900">
                     {{ $penjual->penjual_tenantname }}
                 </h1>
                 <p class="text-sm text-gray-500">
@@ -31,7 +31,7 @@
             @foreach($penjual->products as $product)
                 <div class="bg-white rounded-xl shadow p-4 flex flex-col">
                     <img src="{{ asset('storage/'.$product->product_image) }}"
-                         class="h-36 w-full object-cover rounded-lg mb-3">
+     class="h-36 w-full object-cover rounded-lg mb-3">
 
                     <h3 class="font-semibold text-sm line-clamp-1">
                         {{ $product->product_name }}
