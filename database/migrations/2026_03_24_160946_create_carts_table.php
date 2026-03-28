@@ -8,15 +8,20 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('payments', function (Blueprint $table) {
-            $table->id('payment_id');
-            $table->string('payment_name');
+        Schema::create('carts', function (Blueprint $table) {
+            $table->id();
+
+            $table->foreignId('customer_id')
+                ->unique()
+                ->constrained('customers')
+                ->cascadeOnDelete();
+
             $table->timestamps();
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('payments');
+        Schema::dropIfExists('carts');
     }
 };

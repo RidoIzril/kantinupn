@@ -69,15 +69,30 @@
         </a>
 
         {{-- LOGOUT --}}
-        <form method="POST" action="{{ route('logout') }}" class="mt-4">
-            @csrf
-            <button type="submit"
-                class="w-full flex items-center gap-3 px-4 py-2 rounded-lg
-                       text-red-300 hover:bg-red-500 hover:text-white transition">
-                <span class="text-lg">🚪</span>
-                <span class="text-sm font-medium">Logout</span>
-            </button>
-        </form>
+        <button onclick="logout()"
+    class="w-full flex items-center gap-3 px-4 py-2 rounded-lg
+           text-red-300 hover:bg-red-500 hover:text-white transition mt-4">
+    <span class="text-lg">🚪</span>
+    <span class="text-sm font-medium">Logout</span>
+</button>
+
+<script>
+function logout(){
+    const token = localStorage.getItem('token');
+
+    fetch('/api/logout', {
+        method: 'POST',
+        headers: {
+            'Authorization': 'Bearer ' + token
+        }
+    })
+    .then(() => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('role');
+        window.location.href = '/login';
+    });
+}
+</script>
     </nav>
 
     {{-- FOOTER --}}

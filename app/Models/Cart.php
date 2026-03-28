@@ -6,17 +6,17 @@ use Illuminate\Database\Eloquent\Model;
 
 class Cart extends Model
 {
-    protected $primaryKey = 'cart_id';
-    protected $fillable = [
-        'customer_id', 'product_id', 'quantity', 'price',
-    ];
+    protected $primaryKey = 'carts_id';
 
-    public function product()
+    protected $fillable = ['customers_id'];
+
+    public function customer()
     {
-        return $this->belongsTo(Product::class, 'product_id');
+        return $this->belongsTo(Customers::class);
     }
-    public function customers()
+
+    public function items()
     {
-        return $this->belongsTo(Customers::class, 'customer_id');
+        return $this->hasMany(CartItem::class);
     }
 }

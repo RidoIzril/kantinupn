@@ -3,207 +3,166 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\Product;
-use App\Models\Category;
+use App\Models\Produk;
+use App\Models\Kategori;
+use App\Models\Variant;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Auth;
 
 class ProductController extends Controller
 {
-    /**
-     * ===============================
-     * LIST PRODUK PENJUAL LOGIN
-     * ===============================
-     */
+
+    /*
+    | LIST PRODUK
+    */
     public function index()
     {
-        $penjualId = Auth::guard('penjual')->id();
-
-        $products = Product::with('category')
-            ->where('penjual_id', $penjualId)
+        $products = Produk::with(['kategori','variants'])
             ->latest()
             ->get();
 
         return view('penjual.produk.list_produk', compact('products'));
     }
 
-    /**
-     * ===============================
-     * FORM TAMBAH PRODUK
-     * ===============================
-     */
+
+    /*
+    | FORM TAMBAH
+    */
     public function create()
     {
-        $categories = Category::all();
+        $categories = Kategori::all();
 
         return view('penjual.produk.tambah_produk', compact('categories'));
     }
 
-    /**
-     * ===============================
-     * STORE PRODUK BARU
-     * ===============================
-     */
+
+    /*
+    | STORE
+    */
     public function store(Request $request)
     {
-        $penjualId = Auth::guard('penjual')->id();
+        $validated = $request->validate([
+            'nama' => 'required',
+            'kategoris_id' => 'required|exists:kategoris,id',
+            'harga' => 'required|numeric',
+            'stok' => 'required|integer',
+            'deskripsi' => 'required',
+            'foto_produk' => 'required|image'
+        ]);
 
-        if (!$penjualId) {
-            abort(403, 'Penjual tidak login');
+        // upload
+        $imagePath = $request->file('foto_produk')
+            ->store('produk','public');
+
+        $product = Produk::create([
+            'nama' => $validated['nama'],
+            'kategoris_id' => $validated['kategoris_id'],
+            'harga' => $validated['harga'],
+            'stok' => $validated['stok'],
+            'deskripsi' => $validated['deskripsi'],
+            'foto_produk' => $imagePath,
+        ]);
+
+        // VARIANT
+        if ($request->variant_name) {
+            foreach ($request->variant_name as $i => $name) {
+                if($name){
+                    Variant::create([
+                        'produk_id' => $product->produk_id,
+                        'variant_name' => $name,
+                        'variant_price' => $request->variant_price[$i] ?? 0
+                    ]);
+                }
+            }
         }
 
-        $validated = $request->validate([
-            'product_name'        => 'required|string|max:255',
-            'category_id'         => 'required|exists:categories,category_id',
-            'product_price'       => 'required|numeric|min:0',
-            'product_stock'       => 'required|integer|min:0',
-            'product_description' => 'required|string',
-            'product_image'       => 'required|image|mimes:jpg,jpeg,png|max:2048',
-        ]);
-
-        /**
-         * ===============================
-         * GENERATE PRODUCT CODE
-         * ===============================
-         */
-        $category = Category::findOrFail($validated['category_id']);
-        $categoryCode = $category->category_code;
-
-        $lastProduct = Product::where('product_code', 'like', "{$categoryCode}-%")
-            ->orderBy('product_code', 'desc')
-            ->first();
-
-        $nextNumber = $lastProduct
-            ? ((int) substr($lastProduct->product_code, strlen($categoryCode) + 1)) + 1
-            : 1;
-
-        $productCode = $categoryCode . '-' . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
-
-        /**
-         * ===============================
-         * UPLOAD IMAGE
-         * ===============================
-         */
-        $imagePath = $request->file('product_image')
-            ->store('products', 'public');
-
-        /**
-         * ===============================
-         * SAVE PRODUCT
-         * ===============================
-         */
-        Product::create([
-            'penjual_id'          => $penjualId,
-            'product_code'        => $productCode,
-            'product_name'        => $validated['product_name'],
-            'category_id'         => $validated['category_id'],
-            'product_price'       => $validated['product_price'],
-            'product_stock'       => $validated['product_stock'],
-            'product_description' => $validated['product_description'],
-            'product_image'       => $imagePath,
-        ]);
-
-        return redirect()
-            ->route('produk.list_produk')
-            ->with('success', 'Produk berhasil ditambahkan');
+        return redirect()->route('produk.list_produk')
+            ->with('success','Produk berhasil ditambahkan');
     }
 
-    /**
-     * ===============================
-     * FORM EDIT PRODUK
-     * ===============================
-     */
+
+    /*
+    | EDIT
+    */
     public function edit($id)
     {
-        $penjualId = Auth::guard('penjual')->id();
+        $product = Produk::with('variants')->findOrFail($id);
+        $categories = Kategori::all();
 
-        $product = Product::where('penjual_id', $penjualId)
-            ->findOrFail($id);
-
-        $categories = Category::all();
-
-        return view('penjual.produk.edit_produk', compact('product', 'categories'));
+        return view('penjual.produk.edit_produk', compact('product','categories'));
     }
 
-    /**
-     * ===============================
-     * UPDATE PRODUK
-     * ===============================
-     */
+
+    /*
+    | UPDATE
+    */
     public function update(Request $request, $id)
     {
-        $penjualId = Auth::guard('penjual')->id();
-
-        $product = Product::where('penjual_id', $penjualId)
-            ->findOrFail($id);
+        $product = Produk::findOrFail($id);
 
         $validated = $request->validate([
-            'product_name'        => 'required|string|max:255',
-            'category_id'         => 'required|exists:categories,category_id',
-            'product_price'       => 'required|numeric|min:0',
-            'product_stock'       => 'required|integer|min:0',
-            'product_description' => 'required|string',
-            'product_image'       => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'nama' => 'required',
+            'kategoris_id' => 'required|exists:kategoris,id',
+            'harga' => 'required|numeric',
+            'stok' => 'required|integer',
+            'deskripsi' => 'required',
+            'foto_produk' => 'nullable|image'
         ]);
 
-        /**
-         * ===============================
-         * UPDATE IMAGE
-         * ===============================
-         */
-        if ($request->hasFile('product_image')) {
+        // update image
+        if ($request->hasFile('foto_produk')) {
 
-            // Hapus image lama
-            if ($product->product_image && Storage::disk('public')->exists($product->product_image)) {
-                Storage::disk('public')->delete($product->product_image);
+            if ($product->foto_produk) {
+                Storage::disk('public')->delete($product->foto_produk);
             }
 
-            // Upload baru
-            $product->product_image = $request->file('product_image')
-                ->store('products', 'public');
+            $product->foto_produk = $request->file('foto_produk')
+                ->store('produk','public');
         }
 
-        /**
-         * ===============================
-         * UPDATE DATA
-         * ===============================
-         */
         $product->update([
-            'product_name'        => $validated['product_name'],
-            'category_id'         => $validated['category_id'],
-            'product_price'       => $validated['product_price'],
-            'product_stock'       => $validated['product_stock'],
-            'product_description' => $validated['product_description'],
+            'nama' => $validated['nama'],
+            'kategoris_id' => $validated['kategoris_id'],
+            'harga' => $validated['harga'],
+            'stok' => $validated['stok'],
+            'deskripsi' => $validated['deskripsi'],
         ]);
 
-        return redirect()
-            ->route('produk.list_produk')
-            ->with('success', 'Produk berhasil diperbarui');
+        // reset variant
+        Variant::where('produk_id',$product->produk_id)->delete();
+
+        if ($request->variant_name) {
+            foreach ($request->variant_name as $i => $name) {
+                if($name){
+                    Variant::create([
+                        'produk_id' => $product->produk_id,
+                        'variant_name' => $name,
+                        'variant_price' => $request->variant_price[$i] ?? 0
+                    ]);
+                }
+            }
+        }
+
+        return redirect()->route('produk.list_produk')
+            ->with('success','Produk berhasil diupdate');
     }
 
-    /**
-     * ===============================
-     * DELETE PRODUK
-     * ===============================
-     */
+
+    /*
+    | DELETE
+    */
     public function destroy($id)
     {
-        $penjualId = Auth::guard('penjual')->id();
+        $product = Produk::findOrFail($id);
 
-        $product = Product::where('penjual_id', $penjualId)
-            ->findOrFail($id);
-
-        /**
-         * DELETE IMAGE
-         */
-        if ($product->product_image && Storage::disk('public')->exists($product->product_image)) {
-            Storage::disk('public')->delete($product->product_image);
+        if ($product->foto_produk) {
+            Storage::disk('public')->delete($product->foto_produk);
         }
+
+        Variant::where('produk_id',$product->produk_id)->delete();
 
         $product->delete();
 
-        return redirect()
-            ->route('produk.list_produk')
-            ->with('success', 'Produk berhasil dihapus');
+        return redirect()->route('produk.list_produk')
+            ->with('success','Produk berhasil dihapus');
     }
 }

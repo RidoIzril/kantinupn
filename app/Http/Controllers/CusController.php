@@ -2,41 +2,33 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Product;
-use App\Models\Category;
+use App\Models\Produk;
+use App\Models\Kategori;
 use App\Models\Penjual;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 
 class CusController extends Controller
 {
-    /**
-     * ==========================================
-     * HOME CUSTOMER
-     * ==========================================
-     */
+    /*
+    |==========================================
+    | HOME CUSTOMER
+    |==========================================
+    */
     public function index(Request $request)
     {
         $keyword    = $request->input('keyword');
         $categoryId = $request->input('categories');
-        $categories = Category::all();
+        $categories = Kategori::all();
 
         /*
-        |--------------------------------------------------------------------------
         | TANPA SEARCH
-        |--------------------------------------------------------------------------
         */
         if (!$keyword) {
 
             $penjuals = Penjual::with([
-                'products' => function ($q) {
-                    $q->where('product_stock', '>', 0)
-                      ->with('category');
-                }
-            ])
-            ->withCount([
-                'products' => function ($q) {
-                    $q->where('product_stock', '>', 0);
+                'tenant.produks' => function ($q) {
+                    $q->where('stok', '>', 0)
+                      ->with('kategori');
                 }
             ])
             ->get();
@@ -49,39 +41,44 @@ class CusController extends Controller
         }
 
         /*
-        |--------------------------------------------------------------------------
         | DENGAN SEARCH
-        |--------------------------------------------------------------------------
         */
-        $penjuals = Penjual::whereHas('products', function ($q) use ($keyword, $categoryId) {
+        $penjuals = Penjual::whereHas('tenant', function ($q) use ($keyword) {
 
-                $q->where('product_stock', '>', 0)
+                // search nama tenant
+                $q->where('nama_tenant', 'like', "%$keyword%");
+
+            })
+
+            // SEARCH PRODUK
+            ->orWhereHas('tenant.produks', function ($q) use ($keyword, $categoryId) {
+
+                $q->where('stok', '>', 0)
                   ->where(function ($qq) use ($keyword) {
-                      $qq->where('product_name', 'like', "%$keyword%")
-                         ->orWhere('product_description', 'like', "%$keyword%");
+                      $qq->where('nama', 'like', "%$keyword%")
+                         ->orWhere('deskripsi', 'like', "%$keyword%");
                   });
 
                 if ($categoryId) {
-                    $q->where('category_id', $categoryId);
+                    $q->where('kategoris_id', $categoryId);
                 }
             })
-            ->with(['products' => function ($q) use ($keyword, $categoryId) {
 
-                $q->where('product_stock', '>', 0)
+            ->with(['tenant.produks' => function ($q) use ($keyword, $categoryId) {
+
+                $q->where('stok', '>', 0)
                   ->where(function ($qq) use ($keyword) {
-                      $qq->where('product_name', 'like', "%$keyword%")
-                         ->orWhere('product_description', 'like', "%$keyword%");
+                      $qq->where('nama', 'like', "%$keyword%")
+                         ->orWhere('deskripsi', 'like', "%$keyword%");
                   });
 
                 if ($categoryId) {
-                    $q->where('category_id', $categoryId);
+                    $q->where('kategoris_id', $categoryId);
                 }
 
-                $q->with('category');
+                $q->with('kategori','variants');
             }])
-            ->withCount(['products' => function ($q) {
-                $q->where('product_stock', '>', 0);
-            }])
+
             ->get();
 
         return view('customer.homecustomer', [
@@ -92,81 +89,69 @@ class CusController extends Controller
     }
 
 
-    /**
-     * ==========================================
-     * DETAIL PENJUAL (MENU)
-     * ==========================================
-     */
+    /*
+    |==========================================
+    | DETAIL PENJUAL (MENU)
+    |==========================================
+    */
     public function showPenjual($id)
     {
         $penjual = Penjual::with([
-            'products' => function ($q) {
-                $q->where('product_stock', '>', 0)
-                  ->with('category');
+            'tenant.produks' => function ($q) {
+                $q->where('stok', '>', 0)
+                  ->with('kategori','variants');
             }
         ])
-        ->where('penjual_id', $id)
+        ->where('penjuals_id', $id)
         ->firstOrFail();
 
         return view('customer.menu.show', compact('penjual'));
     }
 
 
-    /**
-     * ==========================================
-     * PROFILE CUSTOMER (VIEW)
-     * ==========================================
-     */
+    /*
+    |==========================================
+    | PROFILE CUSTOMER
+    |==========================================
+    */
     public function profile()
     {
-        $customer = Auth::guard('customer')->user();
+        $customer = auth()->user();
         return view('customer.profile.profilecustomer', compact('customer'));
     }
 
 
-    /**
-     * ==========================================
-     * EDIT PROFILE CUSTOMER
-     * ==========================================
-     */
     public function editProfile()
     {
-        $customer = Auth::guard('customer')->user();
+        $customer = auth()->user();
         return view('customer.profile.edit_profilecust', compact('customer'));
     }
 
 
-    /**
-     * ==========================================
-     * UPDATE PROFILE CUSTOMER
-     * ==========================================
-     */
     public function updateProfile(Request $request)
     {
         $request->validate([
-            'customer_fullname' => 'required|string|max:255',
-            'customer_email'    => 'required|email|max:255',
-            'customer_contact'  => 'required|string|max:20',
-            'customer_dob'      => 'required|date',
-            'customer_gender'   => 'required|string',
-            'customer_faculty'  => 'required|string|max:255',
-            'customer_status'   => 'required|string|max:100',
+            'nama_lengkap' => 'required',
+            'email' => 'required|email',
+            'kontak' => 'required',
+            'tanggal_lahir' => 'required|date',
+            'jenis_kelamin' => 'required',
+            'fakultas' => 'required',
+            'status' => 'required',
         ]);
 
-        $customer = Auth::guard('customer')->user();
+        $customer = auth()->user();
 
         $customer->update([
-            'customer_fullname' => $request->customer_fullname,
-            'customer_email'    => $request->customer_email,
-            'customer_contact'  => $request->customer_contact,
-            'customer_dob'      => $request->customer_dob,
-            'customer_gender'   => $request->customer_gender,
-            'customer_faculty'  => $request->customer_faculty,
-            'customer_status'   => $request->customer_status,
+            'nama_lengkap' => $request->nama_lengkap,
+            'email' => $request->email,
+            'kontak' => $request->kontak,
+            'tanggal_lahir' => $request->tanggal_lahir,
+            'jenis_kelamin' => $request->jenis_kelamin,
+            'fakultas' => $request->fakultas,
+            'status' => $request->status,
         ]);
 
-        return redirect()
-            ->route('profile.profilecustomer')
-            ->with('success', 'Profil berhasil diperbarui');
+        return redirect()->back()->with('success','Profil berhasil diupdate');
     }
 }

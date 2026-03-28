@@ -1,166 +1,80 @@
 @extends('layouts.login')
 
 @section('content')
-<div class="w-full max-w-3xl bg-green-800 rounded-2xl shadow-2xl p-8 text-green-100">
 
-    {{-- HEADER --}}
-    <div class="flex items-center justify-center gap-4 mb-8">
-        <img
-            src="{{ asset('template/dist/assets/compiled/png/LogoKantin.png') }}"
-            alt="Logo"
-            class="w-20 h-20 object-contain opacity-90"
-        >
-        <div class="leading-tight">
-            <h5 class="text-lg font-semibold">NKRI</h5>
-            <p class="text-sm text-green-300">KANTIN UPNVJT</p>
-        </div>
+<div class="w-[360px] bg-green-800 text-white rounded-2xl shadow-2xl p-8">
+
+    <h2 class="text-2xl font-bold text-center mb-6">Registrasi Customer</h2>
+
+    <!-- ERROR -->
+    <div id="errorBox"
+         class="hidden mb-4 text-sm bg-red-500/20 text-red-200 border border-red-400/40 px-3 py-2 rounded-lg">
     </div>
 
-    <h2 class="text-center text-lg font-semibold mb-6">
-        Registrasi Akun Customer
-    </h2>
+    <!-- SUCCESS -->
+    <div id="successBox"
+         class="hidden mb-4 text-sm bg-green-500/20 text-green-200 border border-green-400/40 px-3 py-2 rounded-lg">
+    </div>
 
-    {{-- FORM --}}
-    <form action="{{ route('register') }}" method="POST"
-          class="grid grid-cols-1 md:grid-cols-2 gap-5">
-        @csrf
+    <form id="registerForm" class="space-y-4">
 
-        {{-- Username --}}
-        <div>
-            <label class="block text-sm mb-1">Username</label>
-            <input type="text" name="customer_username" required
-                   placeholder="Masukkan username"
-                   class="w-full px-4 py-2 rounded-lg
-                          bg-green-900 border border-green-600
-                          placeholder-green-300 text-green-100
-                          focus:outline-none focus:ring-2 focus:ring-green-400">
-        </div>
+        <input type="text" name="username" placeholder="Username" required
+            class="w-full px-4 py-2 rounded-lg bg-green-900 border border-green-600">
 
-        {{-- Nama Lengkap --}}
-        <div>
-            <label class="block text-sm mb-1">Nama Lengkap</label>
-            <input type="text" name="customer_fullname" required
-                   placeholder="Nama lengkap"
-                   class="w-full px-4 py-2 rounded-lg
-                          bg-green-900 border border-green-600
-                          placeholder-green-300 text-green-100
-                          focus:outline-none focus:ring-2 focus:ring-green-400">
-        </div>
+        <input type="password" name="password" placeholder="Password" required
+            class="w-full px-4 py-2 rounded-lg bg-green-900 border border-green-600">
 
-        {{-- Email --}}
-        <div>
-            <label class="block text-sm mb-1">Email</label>
-            <input type="email" name="customer_email" required
-                   placeholder="Masukkan email"
-                   class="w-full px-4 py-2 rounded-lg
-                          bg-green-900 border border-green-600
-                          placeholder-green-300 text-green-100
-                          focus:outline-none focus:ring-2 focus:ring-green-400">
-        </div>
+        <button type="submit"
+            class="w-full py-2 rounded-lg bg-green-400 hover:bg-green-300 text-green-900 font-semibold">
+            Daftar
+        </button>
 
-        {{-- No Telepon --}}
-        <div>
-            <label class="block text-sm mb-1">No Telepon</label>
-            <input type="text" name="customer_contact" required
-                   placeholder="08xxxxxxxxxx"
-                   class="w-full px-4 py-2 rounded-lg
-                          bg-green-900 border border-green-600
-                          placeholder-green-300 text-green-100
-                          focus:outline-none focus:ring-2 focus:ring-green-400">
-        </div>
-
-        {{-- Password --}}
-        <div>
-            <label class="block text-sm mb-1">Password</label>
-            <input type="password" name="customer_password" required
-                   placeholder="Masukkan password"
-                   class="w-full px-4 py-2 rounded-lg
-                          bg-green-900 border border-green-600
-                          placeholder-green-300 text-green-100
-                          focus:outline-none focus:ring-2 focus:ring-green-400">
-        </div>
-
-        {{-- Konfirmasi Password --}}
-        <div>
-            <label class="block text-sm mb-1">Konfirmasi Password</label>
-            <input type="password" name="customer_confirm" required
-                   placeholder="Konfirmasi password"
-                   class="w-full px-4 py-2 rounded-lg
-                          bg-green-900 border border-green-600
-                          placeholder-green-300 text-green-100
-                          focus:outline-none focus:ring-2 focus:ring-green-400">
-        </div>
-
-        {{-- Tanggal Lahir --}}
-        <div>
-            <label class="block text-sm mb-1">Tanggal Lahir</label>
-            <input type="date" name="customer_dob" required
-                   class="w-full px-4 py-2 rounded-lg
-                          bg-green-900 border border-green-600
-                          text-green-100
-                          focus:outline-none focus:ring-2 focus:ring-green-400">
-        </div>
-
-        {{-- Gender --}}
-        <div>
-            <label class="block text-sm mb-1">Gender</label>
-            <select name="customer_gender" required
-                    class="w-full px-4 py-2 rounded-lg
-                           bg-green-900 border border-green-600
-                           text-green-100
-                           focus:outline-none focus:ring-2 focus:ring-green-400">
-                <option value="">-- Pilih Gender --</option>
-                <option value="Laki-laki">Laki-laki</option>
-                <option value="Perempuan">Perempuan</option>
-            </select>
-        </div>
-
-        {{-- Fakultas --}}
-        <div>
-            <label class="block text-sm mb-1">Fakultas</label>
-            <input type="text" name="customer_faculty" required
-                   placeholder="Fakultas"
-                   class="w-full px-4 py-2 rounded-lg
-                          bg-green-900 border border-green-600
-                          placeholder-green-300 text-green-100
-                          focus:outline-none focus:ring-2 focus:ring-green-400">
-        </div>
-
-        {{-- Status --}}
-        <div>
-            <label class="block text-sm mb-1">Status</label>
-            <select name="customer_status" required
-                    class="w-full px-4 py-2 rounded-lg
-                           bg-green-900 border border-green-600
-                           text-green-100
-                           focus:outline-none focus:ring-2 focus:ring-green-400">
-                <option value="">-- Pilih Status --</option>
-                <option value="Mahasiswa">Mahasiswa</option>
-                <option value="Dosen">Dosen</option>
-                <option value="Staff">Tendik</option>
-            </select>
-        </div>
-
-        {{-- SUBMIT --}}
-        <div class="md:col-span-2 mt-4">
-            <button type="submit"
-                    class="w-full py-3 rounded-lg
-                           bg-green-400 hover:bg-green-500
-                           text-green-900 font-semibold transition">
-                Daftar
-            </button>
-        </div>
     </form>
 
-    <hr class="my-6 border-green-600">
-
-    {{-- LOGIN --}}
-    <div class="text-center text-sm text-green-200">
+    <div class="text-center mt-4 text-sm text-green-200">
         Sudah punya akun?
-        <a href="{{ route('login') }}"
-           class="text-green-400 font-medium hover:underline">
-            Masuk
+        <a href="/login" class="text-green-300 hover:underline">
+            Login
         </a>
     </div>
+
 </div>
+
+<script>
+document.getElementById('registerForm').addEventListener('submit', async function(e){
+
+    e.preventDefault();
+
+    const username = document.querySelector('[name="username"]').value;
+    const password = document.querySelector('[name="password"]').value;
+
+    const res = await fetch('/api/register',{
+        method:'POST',
+        headers:{
+            'Content-Type':'application/json'
+        },
+        body: JSON.stringify({
+            username: username,
+            password: password
+        })
+    });
+
+    const data = await res.json();
+
+    if(!data.success){
+        document.getElementById('errorBox').classList.remove('hidden');
+        document.getElementById('errorBox').innerText = data.message;
+        return;
+    }
+
+    document.getElementById('successBox').classList.remove('hidden');
+    document.getElementById('successBox').innerText = 'Registrasi berhasil, silakan login';
+
+    setTimeout(()=>{
+        window.location.href = '/login';
+    },1500);
+
+});
+</script>
+
 @endsection

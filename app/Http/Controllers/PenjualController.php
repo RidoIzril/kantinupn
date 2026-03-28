@@ -2,59 +2,51 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Product;
+use App\Models\Produk;
 use App\Models\Customers;
-use App\Models\Transaction;
+use App\Models\Transaksi;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class PenjualController extends Controller
 {
-
- public function __construct()
+    public function index(Request $request)
     {
-        $this->middleware('auth:penjual');
-    }
+        $user = Auth::guard('sanctum')->user();
 
-    public function index()
-    {
-        $penjualId = Auth::guard('penjual')->id();
+        if (!$user) {
+            abort(403);
+        }
 
-        // Produk milik penjual yang login
-        $jumlahProduk = Product::where('penjual_id', $penjualId)->count();
+        $penjualId = $user->penjual_id;
 
-        // Transaksi pending milik penjual
-        $transaksiPending = Transaction::where('penjual_id', $penjualId)
+        $jumlahProduk = Produk::where('penjual_id', $penjualId)->count();
+
+        $transaksiPending = Transaksi::where('penjual_id', $penjualId)
             ->where('status', 'pending')
             ->count();
 
-        // Transaksi dibatalkan milik penjual
-        $transaksiDibatalkan = Transaction::where('penjual_id', $penjualId)
-            ->where(function ($query) {
-                $query->where('status', 'failed')
-                      ->orWhere('delivery_status', 'failed');
+        $transaksiDibatalkan = Transaksi::where('penjual_id', $penjualId)
+            ->where(function ($q) {
+                $q->where('status', 'failed')
+                  ->orWhere('delivery_status', 'failed');
             })->count();
 
-        // Transaksi selesai milik penjual
-        $transaksiSelesai = Transaction::where('penjual_id', $penjualId)
+        $transaksiSelesai = Transaksi::where('penjual_id', $penjualId)
             ->where('delivery_status', 'done')
             ->count();
 
-        // Produk dalam pengiriman milik penjual
-        $produkDalamPengiriman = Transaction::where('penjual_id', $penjualId)
+        $produkDalamPengiriman = Transaksi::where('penjual_id', $penjualId)
             ->where('delivery_status', 'delivered')
             ->count();
 
-        // Total pendapatan milik penjual
-        $totalPendapatan = Transaction::where('penjual_id', $penjualId)
+        $totalPendapatan = Transaksi::where('penjual_id', $penjualId)
             ->where('delivery_status', 'done')
             ->with('order')
             ->get()
-            ->sum(function ($transaction) {
-                return $transaction->order->total_price ?? 0;
-            });
+            ->sum(fn($t) => $t->order->total_price ?? 0);
 
-        $customers = Customers::count(); // ini global boleh
+        $customers = Customers::count();
 
         return view('penjual.homepenjual', compact(
             'customers',

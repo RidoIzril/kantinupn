@@ -3,114 +3,66 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Customers;
-use App\Models\Penjual;
-use App\Models\Superadmin;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
 class AuthApiController extends Controller
 {
-
     public function login(Request $request)
     {
-
         $request->validate([
             'username' => 'required',
-            'password' => 'required',
-            'role' => 'required'
+            'password' => 'required'
         ]);
 
-        $username = $request->username;
-        $password = $request->password;
-        $role = $request->role;
+        $user = User::where('username', $request->username)->first();
 
-        switch ($role) {
-
-            /**
-             * ========================
-             * LOGIN CUSTOMER
-             * ========================
-             */
-            case 'customer':
-
-                $user = Customers::where('customer_username', $username)->first();
-
-                if (!$user || !Hash::check($password, $user->customer_password)) {
-
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Username atau password customer salah'
-                    ], 401);
-                }
-
-                $token = $user->createToken('customer_token')->plainTextToken;
-
-                break;
-
-
-
-            /**
-             * ========================
-             * LOGIN PENJUAL
-             * ========================
-             */
-            case 'penjual':
-
-                $user = Penjual::where('penjual_username', $username)->first();
-
-                if (!$user || !Hash::check($password, $user->penjual_password)) {
-
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Username atau password penjual salah'
-                    ], 401);
-                }
-
-                $token = $user->createToken('penjual_token')->plainTextToken;
-
-                break;
-
-
-
-            /**
-             * ========================
-             * LOGIN SUPERADMIN
-             * ========================
-             */
-            case 'superadmin':
-
-                $user = Superadmin::where('superadmin_username', $username)->first();
-
-                if (!$user || !Hash::check($password, $user->superadmin_password)) {
-
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Username atau password superadmin salah'
-                    ], 401);
-                }
-
-                $token = $user->createToken('superadmin_token')->plainTextToken;
-
-                break;
-
-
-
-            default:
-
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Role tidak valid'
-                ], 400);
+        if (!$user || !Hash::check($request->password, $user->password)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Username / Password salah'
+            ], 401);
         }
 
+        // OPTIONAL: hapus token lama biar tidak numpuk
+        $user->tokens()->delete();
+
+        $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
             'success' => true,
             'message' => 'Login berhasil',
-            'role' => $role,
             'token' => $token,
-            'data' => $user
+            'role' => $user->role
+        ]);
+    }
+    public function register(Request $request)
+{
+    $request->validate([
+        'username' => 'required|unique:users,username',
+        'password' => 'required|min:6'
+    ]);
+
+    $user = User::create([
+        'username' => $request->username,
+        'password' => Hash::make($request->password),
+        'role' => 'customer'
+    ]);
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Registrasi berhasil'
+    ]);
+}
+
+    public function logout(Request $request)
+    {
+        $request->user()->tokens()->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Logout berhasil'
         ]);
     }
 }

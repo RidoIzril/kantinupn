@@ -9,16 +9,20 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('customers', function (Blueprint $table) {
-            $table->id('customer_id');
-            $table->string('customer_username')->unique();
-            $table->string('customer_password');
-            $table->string('customer_fullname');
-            $table->string('customer_email')->unique();
-            $table->date('customer_dob')->nullable();
-            $table->enum('customer_gender', ['Laki-laki', 'Perempuan',]);
-            $table->string('customer_faculty');
-             $table->enum('customer_status', ['Mahasiswa', 'Dosen', 'Tendik']);
-            $table->string('customer_contact');
+            $table->id();
+
+            $table->foreignId('users_id')
+                ->constrained('users')
+                ->cascadeOnDelete();
+
+            $table->string('nama_lengkap')->nullable();
+            $table->string('email')->nullable();
+            $table->date('tanggal_lahir')->nullable();
+            $table->enum('jenis_kelamin', ['laki-laki','perempuan'])->nullable();
+            $table->string('fakultas')->nullable();
+            $table->enum('status', ['Mahasiswa','Dosen','Tendik'])->nullable();;
+            $table->string('kontak')->nullable();
+
             $table->timestamps();
         });
     }

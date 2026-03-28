@@ -2,57 +2,23 @@
 
 namespace App\Models;
 
-use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
-use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Database\Eloquent\Model;
 
-class Penjual extends Authenticatable
+class Penjual extends Model
 {
-    use Notifiable;
-    use HasApiTokens;
-    protected $table = 'penjuals';
-    protected $primaryKey = 'penjual_id';
-
-    // WAJIB untuk custom primary key
-    public $incrementing = true;
-    protected $keyType = 'int';
+    protected $primaryKey = 'penjuals_id';
 
     protected $fillable = [
-        'penjual_username',
-        'penjual_notenant',
-        'penjual_tenantname',
-        'penjual_password',
-        'penjual_fullname',
-        'penjual_nohp',
-        'foto_tenant',
-        'penjual_gender',
-        'penjual_status',
+        'users_id','nama_lengkap','kontak','gender','status'
     ];
 
-    protected $hidden = [
-        'penjual_password',
-    ];
-
-    /*
-    |--------------------------------------------------------------------------
-    | AUTH CONFIGURATION
-    |--------------------------------------------------------------------------
-    */
-
-    // Laravel akan pakai ini sebagai identifier (bukan id default)
-    // Custom password field
-    public function getAuthPassword()
+    public function user()
     {
-        return $this->penjual_password;
+        return $this->belongsTo(User::class);
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | RELATIONSHIP
-    |--------------------------------------------------------------------------
-    */
-    public function products()
+    public function tenant()
     {
-        return $this->hasMany(Product::class, 'penjual_id', 'penjual_id');
+        return $this->hasOne(Tenants::class);
     }
 }

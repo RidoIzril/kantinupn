@@ -1,5 +1,17 @@
 @extends('layouts.app')
 
+<script>
+const token = localStorage.getItem('token');
+const role  = localStorage.getItem('role');
+
+if(!token){
+    window.location.href = '/login';
+}
+
+if(role !== 'superadmin'){
+    window.location.href = '/login';
+}
+</script>
 @section('title', 'Dashboard Superadmin')
 
 @section('content')

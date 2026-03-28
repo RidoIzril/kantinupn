@@ -1,7 +1,18 @@
 @extends('layouts.app')
 
 @section('title', 'Dashboard Penjual')
+<script>
+const token = localStorage.getItem('token');
+const role  = localStorage.getItem('role');
 
+if(!token){
+    window.location.href = '/login';
+}
+
+if(role !== 'penjual'){
+    window.location.href = '/login';
+}
+</script>
 @section('content')
 
 {{-- HEADER --}}
