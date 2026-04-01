@@ -1,5 +1,6 @@
 @extends('layouts.app')
 @section('title','Kelola Penjual')
+@include('superadmin.sidebarsuperadmin')
 
 @section('content')
 <h1 class="text-xl font-bold mb-4">Kelola Akun Penjual</h1>

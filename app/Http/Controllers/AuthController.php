@@ -72,7 +72,7 @@ public function showRegistrationForm()
 
         // PENJUAL
         if (Auth::guard('penjual')->attempt([
-            'penjual_username' => $request->user_name,
+            'username' => $request->user_name,
             'password' => $request->user_password
         ])) {
 

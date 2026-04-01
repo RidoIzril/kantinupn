@@ -6,6 +6,10 @@ use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
+// ⬇️ WAJIB ADA
+use App\Models\Customers;
+use App\Models\Penjual;
+
 class User extends Authenticatable
 {
     use HasApiTokens, Notifiable;
@@ -22,13 +26,13 @@ class User extends Authenticatable
     ];
 
     // RELASI
-    public function customer()
+    public function customers()
     {
-        return $this->hasOne(Customer::class);
+        return $this->hasOne(Customers::class);
     }
 
     public function penjual()
     {
-        return $this->hasOne(Penjual::class);
+        return $this->hasOne(Penjual::class, 'users_id', 'id');
     }
 }

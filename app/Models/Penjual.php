@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Penjual extends Model
 {
-    protected $primaryKey = 'penjuals_id';
+    protected $table = 'penjuals'; // pastikan nama tabel benar
 
     protected $fillable = [
         'users_id','nama_lengkap','kontak','gender','status'
@@ -14,7 +14,7 @@ class Penjual extends Model
 
     public function user()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'users_id', 'id');
     }
 
     public function tenant()

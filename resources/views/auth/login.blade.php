@@ -24,6 +24,7 @@
 
     <!-- FORM -->
     <form id="loginForm" class="space-y-4">
+        @csrf
 
         <div>
             <label class="block text-sm mb-1 text-green-200">Username</label>
@@ -43,65 +44,70 @@
         </button>
 
         <div class="text-center mt-4 text-sm text-green-200">
-    Belum punya akun?
-    <a href="/register" class="text-green-300 hover:underline">
-        Daftar di sini
-    </a>
-</div>
+            Belum punya akun?
+            <a href="/register" class="text-green-300 hover:underline">
+                Daftar di sini
+            </a>
+        </div>
     </form>
 
 </div>
 
 <script>
 document.getElementById('loginForm').addEventListener('submit', async function(e){
-
     e.preventDefault();
 
     const username = document.querySelector('[name="username"]').value;
     const password = document.querySelector('[name="password"]').value;
+    const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') 
+                 || document.querySelector('[name="_token"]')?.value;
 
     try {
         const res = await fetch('/api/login',{
             method:'POST',
             headers:{
-                'Content-Type':'application/json'
+                'Content-Type':'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': csrf
             },
-            body: JSON.stringify({
-                username: username,
-                password: password
-            })
+            credentials: 'same-origin', // penting agar session cookie tersimpan
+            body: JSON.stringify({ username, password })
         });
 
         const data = await res.json();
 
-        if(!data.success){
+        if(!res.ok || !data.success){
             document.getElementById('errorBox').classList.remove('hidden');
-            document.getElementById('errorBox').innerText = data.message;
+            document.getElementById('errorBox').innerText = data.message || 'Login gagal';
             return;
         }
 
-        // simpan token & role
+        // Optional token untuk konsumsi API via JS
         localStorage.setItem('token', data.token);
         localStorage.setItem('role', data.role);
 
         // redirect sesuai role
         if(data.role === 'customer'){
             window.location.href = '/customer/home';
+            return;
         }
 
         if(data.role === 'penjual'){
             window.location.href = '/penjual/home';
+            return;
         }
 
         if(data.role === 'superadmin'){
             window.location.href = '/superadmin/dashboard';
+            return;
         }
 
+        // fallback
+        window.location.href = '/';
     } catch (error) {
         document.getElementById('errorBox').classList.remove('hidden');
         document.getElementById('errorBox').innerText = 'Terjadi kesalahan server';
     }
-
 });
 </script>
 

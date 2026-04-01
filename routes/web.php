@@ -97,8 +97,10 @@ Route::prefix('customer')->group(function(){
 */
 Route::prefix('penjual')->group(function () {
 
-    Route::get('/home', [PenjualController::class, 'index'])
-        ->name('penjual.homepenjual');
+    // halaman shell (proteksi via JS + token API)
+    Route::get('/home', function () {
+        return view('penjual.homepenjual');
+    })->name('penjual.homepenjual');
 
     Route::get('/kelola_transaksi', [ManageController::class, 'index'])
         ->name('penjual.transaction_manage.manage');
@@ -137,7 +139,6 @@ Route::prefix('penjual')->group(function () {
 
     Route::post('/payment', [PaymentController::class, 'store'])
         ->name('payment.store');
-
 });
 
 
@@ -146,12 +147,14 @@ Route::prefix('penjual')->group(function () {
 | SUPERADMIN
 |--------------------------------------------------------------------------
 */
-Route::prefix('superadmin')->group(function () {
+Route::prefix('superadmin')
+    ->name('superadmin.')
+    ->group(function () {
 
     Route::get('/dashboard', [SuperadminController::class, 'home'])
         ->name('homesuperadmin');
 
-    Route::get('/kategori', [CategoryController::class, 'index'])
+   Route::get('/kategori', [CategoryController::class, 'index'])
         ->name('kategori.list_kategori');
 
     Route::post('/kategori', [CategoryController::class, 'store'])
@@ -162,5 +165,26 @@ Route::prefix('superadmin')->group(function () {
 
     Route::delete('/kategori/{id}', [CategoryController::class, 'destroy'])
         ->name('kategori.destroy');
+
+    Route::get('/penjual', [SuperadminController::class, 'penjual'])
+        ->name('penjual.index');
+
+    Route::get('/penjual/tambah', [SuperadminController::class, 'createPenjual'])
+        ->name('penjual.create');
+
+    Route::post('/penjual', [SuperadminController::class, 'storePenjual'])
+        ->name('penjual.store');
+
+    Route::get('/penjual/{id}/edit', [SuperadminController::class, 'editPenjual'])
+        ->name('penjual.edit');
+
+    Route::put('/penjual/{id}', [SuperadminController::class, 'updatePenjual'])
+        ->name('penjual.update');
+
+    Route::put('/penjual/{id}/status', [SuperadminController::class, 'updateStatus'])
+        ->name('penjual.update_status');
+
+    Route::delete('/penjual/{id}', [SuperadminController::class, 'destroyPenjual'])
+        ->name('penjual.destroy');
 
 });

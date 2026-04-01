@@ -2,6 +2,7 @@
 @section('title','Tambah Penjual')
 
 @section('content')
+@include('superadmin.sidebarsuperadmin')
 <h1 class="text-xl font-bold mb-6">Tambah Akun Penjual</h1>
 
 {{-- ERROR --}}
@@ -23,16 +24,13 @@
     @csrf
 
     {{-- NAMA LENGKAP --}}
-    <input name="penjual_fullname"
+    <input name="username"
            class="w-full border p-2 rounded"
-           placeholder="Nama Lengkap"
+           placeholder="username penjual"
            required>
 
-    {{-- NO TENANT --}}
-    <input name="penjual_notenant"
-           class="w-full border p-2 rounded"
-           placeholder="Nomer Tenant"
-           required>
+    <input type="password" name="password" placeholder="Password" required
+            class="w-full px-4 py-2 rounded">
 
     {{-- NAMA TENANT --}}
     <input name="penjual_tenantname"

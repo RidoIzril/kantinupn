@@ -6,19 +6,37 @@ use App\Models\Produk;
 use App\Models\Customers;
 use App\Models\Transaksi;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 
 class PenjualController extends Controller
 {
     public function index(Request $request)
     {
-        $user = Auth::guard('sanctum')->user();
+        dd([
+    'auth_check' => auth()->check(),
+    'auth_user_id' => auth()->id(),
+    'auth_role' => auth()->user()->role ?? null,
+    'request_user' => optional(request()->user())->id,
+]);
+        // Ambil user dari guard aktif (web atau sanctum)
+        $user = auth()->user() ?? $request->user();
 
         if (!$user) {
-            abort(403);
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Unauthorized'], 401);
+            }
+            return redirect()->route('login');
         }
 
-        $penjualId = $user->penjual_id;
+        $penjual = $user->penjual;
+
+        if (!$penjual) {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Penjual tidak ditemukan'], 404);
+            }
+            return redirect()->route('login')->withErrors('Data penjual tidak ditemukan.');
+        }
+
+        $penjualId = $penjual->id; // penting: pakai PK custom
 
         $jumlahProduk = Produk::where('penjual_id', $penjualId)->count();
 
@@ -30,7 +48,8 @@ class PenjualController extends Controller
             ->where(function ($q) {
                 $q->where('status', 'failed')
                   ->orWhere('delivery_status', 'failed');
-            })->count();
+            })
+            ->count();
 
         $transaksiSelesai = Transaksi::where('penjual_id', $penjualId)
             ->where('delivery_status', 'done')
@@ -44,18 +63,41 @@ class PenjualController extends Controller
             ->where('delivery_status', 'done')
             ->with('order')
             ->get()
-            ->sum(fn($t) => $t->order->total_price ?? 0);
+            ->sum(fn ($t) => $t->order->total_price ?? 0);
 
-        $customers = Customers::count();
+        $jumlahCustomer = Customers::count();
 
-        return view('penjual.homepenjual', compact(
-            'customers',
+        if ($request->expectsJson() || $request->is('api/*')) {
+            return response()->json([
+                'message' => 'Dashboard penjual berhasil diambil',
+                'data' => [
+                    'penjual' => [
+                        'id' => $penjual->penjuals_id,
+                        'username' => $user->username ?? null,
+                    ],
+                    'statistik' => [
+                        'jumlah_produk' => $jumlahProduk,
+                        'transaksi_pending' => $transaksiPending,
+                        'transaksi_dibatalkan' => $transaksiDibatalkan,
+                        'transaksi_selesai' => $transaksiSelesai,
+                        'produk_dikirim' => $produkDalamPengiriman,
+                        'total_pendapatan' => $totalPendapatan,
+                        'jumlah_customer' => $jumlahCustomer,
+                    ]
+                ]
+            ]);
+        }
+
+        // untuk route web /penjual/home
+        return view('penjual.home', compact(
             'jumlahProduk',
             'transaksiPending',
             'transaksiDibatalkan',
             'transaksiSelesai',
+            'produkDalamPengiriman',
             'totalPendapatan',
-            'produkDalamPengiriman'
+            'jumlahCustomer',
+            'penjual'
         ));
     }
 }

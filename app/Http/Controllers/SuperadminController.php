@@ -3,26 +3,27 @@
 namespace App\Http\Controllers;
 
 use App\Models\Penjual;
-use App\Models\Category;
+use App\Models\Kategori;
 use App\Models\Customers;
-use App\Models\Transaction;
+use App\Models\Transaksi;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
 class SuperadminController extends Controller
 {
     /* =======================
-     | DASHBOARD / HOME
+     | DASHBOARD
      =======================*/
     public function home()
     {
         return view('superadmin.homesuperadmin', [
-            'jumlahPenjual'    => Penjual::count(),
+            'jumlahPenjual'   => Penjual::count(),
             'jumlahCustomer'  => Customers::count(),
-            'jumlahKategori'  => Category::count(),
-            'jumlahTransaksi' => Transaction::count(),
+            'jumlahKategori'  => Kategori::count(),
+            'jumlahTransaksi' => Transaksi::count(),
         ]);
     }
+
 
     /* =======================
      | LIST + SEARCH PENJUAL
@@ -31,15 +32,21 @@ class SuperadminController extends Controller
     {
         $keyword = $request->search;
 
-        $penjuals = Penjual::when($keyword, function ($query) use ($keyword) {
-            $query->where('penjual_username', 'like', "%{$keyword}%")
-                  ->orWhere('penjual_tenantname', 'like', "%{$keyword}%")
-                  ->orWhere('penjual_notenant', 'like', "%{$keyword}%")
-                  ->orWhere('penjual_nohp', 'like', "%{$keyword}%");
-        })->orderBy('created_at', 'desc')->get();
+        $penjuals = Penjual::query()
+            ->when($keyword, function ($query) use ($keyword) {
+                $query->where(function ($q) use ($keyword) {
+                    $q->where('penjual_username', 'like', "%{$keyword}%")
+                      ->orWhere('penjual_tenantname', 'like', "%{$keyword}%")
+                      ->orWhere('penjual_notenant', 'like', "%{$keyword}%")
+                      ->orWhere('penjual_nohp', 'like', "%{$keyword}%");
+                });
+            })
+            ->orderBy('created_at', 'desc')
+            ->get();
 
         return view('superadmin.akun.akun_penjual', compact('penjuals', 'keyword'));
     }
+
 
     /* =======================
      | FORM TAMBAH PENJUAL
@@ -49,36 +56,34 @@ class SuperadminController extends Controller
         return view('superadmin.akun.tambah_penjual');
     }
 
+
     /* =======================
      | SIMPAN PENJUAL
      =======================*/
     public function storePenjual(Request $request)
     {
         $data = $request->validate([
-            'penjual_fullname'   => 'required|string|max:255',
-            'penjual_notenant'   => 'required|unique:penjuals,penjual_notenant',
-            'penjual_tenantname' => 'required|unique:penjuals,penjual_tenantname',
-            'penjual_nohp'       => 'required|string|max:20',
-            'penjual_gender'     => 'required|in:Laki-laki,Perempuan',
-            'penjual_username'   => 'required|unique:penjuals,penjual_username',
-            'penjual_password'   => 'required|min:6',
-            'penjual_status'     => 'required|in:aktif,nonaktif',
-            'foto_tenant'        => 'nullable|image|max:2048',
+            'username'   => 'required|unique:penjuals,penjual_username',
+            'password'   => 'required|min:6',
+            'status'     => 'required|in:aktif,nonaktif',
         ]);
 
+        // upload foto
         if ($request->hasFile('foto_tenant')) {
             $data['foto_tenant'] = $request->file('foto_tenant')
                 ->store('foto_tenant', 'public');
         }
 
+        // hash password
         $data['penjual_password'] = Hash::make($data['penjual_password']);
 
         Penjual::create($data);
 
         return redirect()
-            ->route('superadmin.penjual.index')
+            ->route('penjual.index')
             ->with('success', 'Akun penjual berhasil ditambahkan');
     }
+
 
     /* =======================
      | FORM EDIT PENJUAL
@@ -86,34 +91,30 @@ class SuperadminController extends Controller
     public function editPenjual($id)
     {
         $penjual = Penjual::findOrFail($id);
+
         return view('superadmin.akun.edit_penjual', compact('penjual'));
     }
 
+
     /* =======================
-     | UPDATE DATA PENJUAL
+     | UPDATE PENJUAL
      =======================*/
     public function updatePenjual(Request $request, $id)
     {
         $penjual = Penjual::findOrFail($id);
 
         $data = $request->validate([
-            'penjual_fullname'   => 'required|string|max:255',
-            'penjual_notenant'   => 'required|unique:penjuals,penjual_notenant,' . $id . ',penjual_id',
-            'penjual_tenantname' => 'required|unique:penjuals,penjual_tenantname,' . $id . ',penjual_id',
-            'penjual_nohp'       => 'required|string|max:20',
-            'penjual_gender'     => 'required|in:Laki-laki,Perempuan',
-            'penjual_username'   => 'required|unique:penjuals,penjual_username,' . $id . ',penjual_id',
-            'penjual_password'   => 'nullable|min:6',
-            'penjual_status'     => 'required|in:aktif,nonaktif',
-            'foto_tenant'        => 'nullable|image|max:2048',
+            'username'   => 'required|unique:penjuals,penjual_username,' . $id . ',penjual_id',
+            'password'   => 'nullable|min:6',
         ]);
 
+        // upload foto baru
         if ($request->hasFile('foto_tenant')) {
             $data['foto_tenant'] = $request->file('foto_tenant')
                 ->store('foto_tenant', 'public');
         }
 
-        // password opsional
+        // password optional
         if ($request->filled('penjual_password')) {
             $data['penjual_password'] = Hash::make($request->penjual_password);
         } else {
@@ -123,31 +124,32 @@ class SuperadminController extends Controller
         $penjual->update($data);
 
         return redirect()
-            ->route('superadmin.penjual.index')
+            ->route('penjual.index')
             ->with('success', 'Data penjual berhasil diperbarui');
     }
 
+
     /* =======================
-     | TOGGLE STATUS PENJUAL
+     | UPDATE STATUS
      =======================*/
     public function updateStatus(Request $request, $id)
-{
-    $penjual = Penjual::findOrFail($id);
+    {
+        $request->validate([
+            'penjual_status' => 'required|in:aktif,nonaktif',
+        ]);
 
-    $request->validate([
-        'penjual_status' => 'required|in:aktif,nonaktif',
-    ]);
+        $penjual = Penjual::findOrFail($id);
 
-    $penjual->update([
-        'penjual_status' => $request->penjual_status
-    ]);
+        $penjual->update([
+            'penjual_status' => $request->penjual_status
+        ]);
 
-    return back()->with('success', 'Status penjual berhasil diperbarui');
-}
+        return back()->with('success', 'Status penjual berhasil diperbarui');
+    }
 
 
     /* =======================
-     | HAPUS PENJUAL
+     | DELETE PENJUAL
      =======================*/
     public function destroyPenjual($id)
     {

@@ -68,15 +68,12 @@
         <hr class="border-green-700 my-4">
 
         {{-- Logout --}}
-        <form method="POST" action="{{ route('logout') }}">
-            @csrf
-            <button type="submit"
-                class="w-full flex items-center gap-3 px-4 py-2 rounded-lg
-                       text-red-300 hover:bg-red-500 hover:text-white transition">
-                <i class="bi bi-box-arrow-left text-lg"></i>
-                <span class="text-sm font-medium">Logout</span>
-            </button>
-        </form>
+        <button type="button" onclick="handleLogout()"
+            class="w-full flex items-center gap-3 px-4 py-2 rounded-lg
+                   text-red-300 hover:bg-red-500 hover:text-white transition">
+            <i class="bi bi-box-arrow-left text-lg"></i>
+            <span class="text-sm font-medium">Logout</span>
+        </button>
     </nav>
 
     {{-- FOOTER --}}
@@ -84,3 +81,26 @@
         © {{ date('Y') }} Kantin NKRI
     </div>
 </aside>
+<script>
+async function handleLogout() {
+    const token = localStorage.getItem('token');
+
+    try {
+        if (token) {
+            await fetch('/api/logout', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+        }
+    } catch (e) {
+        console.error(e);
+    } finally {
+        localStorage.removeItem('token');
+        localStorage.removeItem('role');
+        window.location.href = '/login';
+    }
+}
+</script>

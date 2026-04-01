@@ -58,16 +58,36 @@
         <hr class="border-green-700 my-4">
 
         {{-- Logout --}}
-        <form method="POST" action="{{ route('logout') }}">
-            @csrf
-            <button type="submit"
-                class="w-full flex items-center gap-3 px-4 py-2 rounded-lg
-                       text-red-300 hover:bg-red-500 hover:text-white transition">
-                <i class="bi bi-box-arrow-left text-lg"></i>
-                <span class="text-sm font-medium">Logout</span>
-            </button>
-        </form>
+        <button onclick="logout()"
+    class="w-full flex items-center gap-3 px-4 py-2 rounded-lg
+           text-red-300 hover:bg-red-500 hover:text-white transition mt-4">
+    <span class="text-lg">🚪</span>
+    <span class="text-sm font-medium">Logout</span>
+</button>
     </nav>
+
+    <script>
+function logout() {
+    fetch('/api/logout', {
+        method: 'POST',
+        headers: {
+            'Authorization': 'Bearer ' + localStorage.getItem('token'),
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+        console.log(data);
+
+        // hapus token
+        localStorage.removeItem('token');
+
+        // redirect ke login
+        window.location.href = '/login';
+    })
+    .catch(err => console.error(err));
+}
+</script>
 
     {{-- FOOTER --}}
     <div class="px-6 py-4 border-t border-green-700 text-xs text-green-300">

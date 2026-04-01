@@ -13,22 +13,23 @@ class UserController extends Controller
         return view('penjual.user.list_user', compact('customers'));
     }
     public function update(Request $request, $id)
-    {
-        $request->validate([
-            'customer_fullname' => $request->customer_fullname,
-            'customer_email'    => $request->customer_email,
-            'customer_contact'  => $request->customer_contact,
-            'customer_dob'      => $request->customer_dob,
-            'customer_gender'   => $request->customer_gender,
-            'customer_faculty'  => $request->customer_faculty,
-            'customer_status'   => $request->customer_status,
-        ]);
+{
+    $data = $request->validate([
+        'customer_fullname' => 'required|string|max:255',
+        'customer_email'    => 'required|email',
+        'customer_contact'  => 'required|string|max:20',
+        'customer_dob'      => 'required|date',
+        'customer_gender'   => 'required',
+        'customer_faculty'  => 'required|string',
+        'customer_status'   => 'required',
+    ]);
 
-        $customer = Customers::findOrFail($id);
-        $customer->update($request->all());
+    $customer = Customers::findOrFail($id);
+    $customer->update($data);
 
-        return redirect()->route('user.list_user')->with('success', 'Customer Berhasil diupdate.');
-    }
+    return redirect()->route('user.list_user')
+        ->with('success', 'Customer berhasil diupdate.');
+}
 
     public function destroy($id)
     {
