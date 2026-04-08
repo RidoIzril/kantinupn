@@ -6,19 +6,20 @@ use Illuminate\Database\Eloquent\Model;
 
 class Tenants extends Model
 {
-    protected $primaryKey = 'tenants_id';
+    protected $table = 'tenants';
+    protected $primaryKey = 'id';
 
     protected $fillable = [
-        'penjuals_id','tenant_name','no_tenant','foto_tenant'
+        'penjuals_id', 'tenant_name', 'no_tenant', 'foto_tenant'
     ];
 
     public function penjual()
     {
-        return $this->belongsTo(Penjual::class);
+        return $this->belongsTo(Penjual::class, 'penjuals_id', 'id');
     }
 
     public function produks()
     {
-        return $this->hasMany(Produk::class);
+        return $this->hasMany(Produk::class, 'tenants_id', 'id');
     }
 }

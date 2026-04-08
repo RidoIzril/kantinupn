@@ -40,20 +40,20 @@ Route::prefix('customer')->group(function(){
     Route::get('/home', [CusController::class,'index'])
         ->name('customer.homecustomer');
 
-    Route::get('/penjual/{id}', [CusController::class, 'showPenjual'])
+    Route::get('/customer/penjual/{id}', [CusController::class, 'showPenjual'])
         ->name('customer.menu.show');
 
-    Route::get('/profile', [CusController::class, 'profile'])
+    Route::get('/customer/profile', [CusController::class, 'profile'])
         ->name('profile.profilecustomer');
 
-    Route::get('/profile/edit', [CusController::class, 'editProfile'])
+    Route::get('/customer/profile/edit', [CusController::class, 'editProfile'])
         ->name('profile.edit_profilecust');
 
-    Route::put('/profile', [CusController::class, 'updateProfile'])
+    Route::put('/customer/profile', [CusController::class, 'updateProfile'])
         ->name('customer.profile.update');
 
-    // CART
-    Route::get('/keranjang', [CartController::class, 'index'])
+    // Cart
+    Route::get('/customer/keranjang', [CartController::class, 'index'])
         ->name('carts.cartcustomer');
 
     Route::post('/cart/add', [CartController::class, 'add'])
@@ -65,26 +65,26 @@ Route::prefix('customer')->group(function(){
     Route::delete('/cart/remove', [CartController::class, 'remove'])
         ->name('cart.remove');
 
-    Route::post('/cart/checkout', [TransactionController::class, 'checkout'])
+     Route::post('/cart/checkout', [TransactionController::class, 'checkout'])
         ->name('cart.checkout');
-
-    // TRANSAKSI
-    Route::get('/transaksi', [TransactionController::class, 'index'])
+        
+    // Transaksi
+    Route::get('/customer/transaksi', [TransactionController::class, 'index'])
         ->name('transactions.list_transaction');
 
-    Route::get('/transaksi/{id}', [TransactionController::class, 'show'])
+    Route::get('/customer/transaksi/{id}', [TransactionController::class, 'show'])
         ->name('transactions.show');
 
-    Route::post('/transaksi/accept/{id}', [TransactionController::class, 'accept'])
+    Route::post('/customer/transaksi/accept/{id}', [TransactionController::class, 'accept'])
         ->name('transactions.accept');
 
-    Route::post('/transaksi/cancel/{id}', [TransactionController::class, 'cancel'])
+    Route::post('/customer/transaksi/cancel/{id}', [TransactionController::class, 'cancel'])
         ->name('transaction.cancel');
 
-    Route::get('/transaksi/{id}/download-pdf', [TransactionController::class, 'downloadPdf'])
+    Route::get('/customer/transaksi/{id}/download-pdf', [TransactionController::class, 'downloadPdf'])
         ->name('transactions.download_pdf');
 
-    Route::post('/transaksi/{id}/send-invoice', [TransactionController::class, 'sendInvoice'])
+    Route::post('/customer/transaksi/{id}/send-invoice', [TransactionController::class, 'sendInvoice'])
         ->name('transactions.send_invoice');
 
 });
@@ -102,6 +102,14 @@ Route::prefix('penjual')->group(function () {
         return view('penjual.homepenjual');
     })->name('penjual.homepenjual');
 
+    Route::get('/profile', function () {
+    return view('penjual.profile.index');
+})->name('penjual.profile.show');
+
+    Route::get('/profile/edit', [PenjualController::class, 'profileEdit'])->name('penjual.profile.edit');
+    Route::put('/profile/update', [PenjualController::class, 'profileUpdate'])->name('penjual.profile.update');
+    Route::delete('/profile/delete', [PenjualController::class, 'profileDestroy'])->name('penjual.profile.destroy');
+    
     Route::get('/kelola_transaksi', [ManageController::class, 'index'])
         ->name('penjual.transaction_manage.manage');
 

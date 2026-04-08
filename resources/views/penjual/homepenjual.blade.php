@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('title', 'Dashboard Penjual')
-@include('penjual.sidebarpenjual')
+
 @section('content')
 <div class="flex justify-between items-center mb-8">
     <div>
@@ -34,61 +34,62 @@
         <p id="transaksiSelesai" class="text-2xl font-bold">0</p>
     </div>
 </div>
+@endsection
 
+@push('scripts')
 <script>
-(async function () {
+document.addEventListener('DOMContentLoaded', async function () {
     const token = localStorage.getItem('token');
-    const role = localStorage.getItem('role');
+    const role  = localStorage.getItem('role');
 
     if (!token || role !== 'penjual') {
-        window.location.href = '/login';
+        window.location.replace("{{ url('/login') }}");
         return;
     }
 
-    // validasi token + role
-    const meRes = await fetch('/api/me', {
-        headers: {
-            'Accept': 'application/json',
-            'Authorization': `Bearer ${token}`
+    const headers = {
+        Accept: 'application/json',
+        Authorization: `Bearer ${token}`
+    };
+
+    const API_ME   = "{{ url('/api/me') }}";
+    const API_DASH = "{{ url('/api/penjual/dashboard') }}";
+
+    try {
+        const meRes = await fetch(API_ME, { method: 'GET', headers });
+        if (!meRes.ok) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('role');
+            window.location.replace("{{ url('/login') }}");
+            return;
         }
-    });
 
-    if (!meRes.ok) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('role');
-        window.location.href = '/login';
-        return;
-    }
+        const meJson = await meRes.json();
 
-    const meJson = await meRes.json();
-    if ((meJson.user?.role || '').toLowerCase() !== 'penjual') {
-        window.location.href = '/login';
-        return;
-    }
+        console.log('HIT DASH URL =>', API_DASH);
+        const dashRes = await fetch(API_DASH, { method: 'GET', headers });
+        const raw = await dashRes.text();
 
-    // ambil dashboard
-    const dashRes = await fetch('/api/penjual/dashboard', {
-        headers: {
-            'Accept': 'application/json',
-            'Authorization': `Bearer ${token}`
+        let dashJson = {};
+        try { dashJson = JSON.parse(raw); } catch (_) {}
+
+        if (!dashRes.ok) {
+            console.error('Dashboard API ERROR', { url: API_DASH, status: dashRes.status, body: raw });
+            return;
         }
-    });
 
-    if (!dashRes.ok) {
-        alert('Unauthorized / gagal ambil dashboard');
-        return;
+        const s = dashJson.data?.statistik || {};
+        const p = dashJson.data?.penjual || {};
+
+        document.getElementById('namaPenjual').innerText = p.username ?? meJson.user?.username ?? '-';
+        document.getElementById('jumlahProduk').innerText = s.jumlah_produk ?? 0;
+        document.getElementById('transaksiPending').innerText = s.transaksi_pending ?? 0;
+        document.getElementById('transaksiSelesai').innerText = s.transaksi_selesai ?? 0;
+        document.getElementById('totalPendapatan').innerText =
+            'Rp ' + Number(s.total_pendapatan ?? 0).toLocaleString('id-ID');
+    } catch (err) {
+        console.error('Fetch exception:', err);
     }
-
-    const json = await dashRes.json();
-    const s = json.data?.statistik || {};
-    const p = json.data?.penjual || {};
-
-    document.getElementById('namaPenjual').innerText = p.username ?? meJson.user.username ?? '-';
-    document.getElementById('jumlahProduk').innerText = s.jumlah_produk ?? 0;
-    document.getElementById('transaksiPending').innerText = s.transaksi_pending ?? 0;
-    document.getElementById('transaksiSelesai').innerText = s.transaksi_selesai ?? 0;
-    document.getElementById('totalPendapatan').innerText =
-        'Rp ' + Number(s.total_pendapatan ?? 0).toLocaleString('id-ID');
-})();
+});
 </script>
-@endsection
+@endpush

@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Transaksi extends Model
 {
+    protected $table = 'transaksi';
     protected $primaryKey = 'transaksis_id';
 
     protected $fillable = [
@@ -15,6 +16,7 @@ class Transaksi extends Model
 
     public function order()
     {
-        return $this->belongsTo(Order::class);
+        // FK di transaksi = orders_id, PK di orders = order_id
+        return $this->belongsTo(Order::class, 'orders_id', 'order_id');
     }
 }

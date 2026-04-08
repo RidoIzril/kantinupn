@@ -10,11 +10,15 @@ Route::post('/register', [AuthApiController::class, 'register']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthApiController::class, 'logout']);
+
     Route::get('/me', function (Request $request) {
         return response()->json([
             'success' => true,
             'user' => $request->user()
         ]);
     });
+
     Route::get('/penjual/dashboard', [PenjualController::class, 'index']);
+    Route::get('/penjual/profile', [PenjualController::class, 'profile']);
+    Route::put('/penjual/profile/update', [PenjualController::class, 'profileUpdate']);
 });

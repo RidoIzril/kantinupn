@@ -1,321 +1,217 @@
 @extends('layouts.app')
 
 @section('content')
-
 <div class="flex min-h-screen bg-gray-100">
 
+    {{-- SIDEBAR --}}
+    @include('customer.sidebarcus')
 
-@include('customer.sidebarcus')
+    {{-- MAIN --}}
+    <div class="flex-1 p-6">
 
-<div class="flex-1 p-6">
-
-    {{-- NOTIFIKASI --}}
-    @if(session('success'))
-        <div class="bg-green-100 text-green-700 p-3 rounded mb-4">
-            {{ session('success') }}
-        </div>
-    @endif
-
-
-    {{-- HEADER TENANT --}}
-    <div class="bg-white rounded-xl shadow p-6 mb-6 flex gap-4">
-
-        <img
-            src="{{ $penjual->foto_tenant ? asset('storage/'.$penjual->foto_tenant) : asset('images/default-store.png') }}"
-            class="w-24 h-24 rounded-xl object-cover"
-        >
-
-        <div>
-            <h1 class="text-3xl font-bold text-gray-900">
-                {{ $penjual->penjual_tenantname }}
-            </h1>
-
-            <p class="text-sm text-gray-500">
-                {{ $penjual->penjual_fullname }}
-            </p>
-        </div>
-
-    </div>
-
-
-    {{-- LIST MENU --}}
-    <h2 class="text-lg font-semibold mb-4">
-        Menu
-    </h2>
-
-
-    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-
-        @foreach($penjual->products as $product)
-
-            <div class="bg-white rounded-xl shadow p-4 flex flex-col">
-
-                <img
-                    src="{{ asset('storage/'.$product->product_image) }}"
-                    class="h-36 w-full object-cover rounded-lg mb-3"
-                >
-
-                <h3 class="font-semibold text-sm">
-                    {{ $product->product_name }}
-                </h3>
-
-                <p class="text-xs text-gray-500">
-                    {{ $product->category->category_name }}
-                </p>
-
-                <p class="text-green-600 font-bold mt-2">
-                    Rp {{ number_format($product->product_price,0,',','.') }}
-                </p>
-
-                <button
-                    onclick='openMenuModal(
-                        {{ $product->product_id }},
-                        "{{ $product->product_name }}",
-                        {{ $product->product_price }},
-                        "{{ asset("storage/".$product->product_image) }}",
-                        @json($product->variants)
-                    )'
-                    class="w-full mt-3 bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg"
-                >
-                    + Tambah ke Keranjang
-                </button>
-
+        {{-- NOTIFIKASI --}}
+        @if(session('success'))
+            <div class="bg-green-100 text-green-700 p-3 rounded mb-4">
+                {{ session('success') }}
             </div>
+        @endif
 
-        @endforeach
+        {{-- HEADER TENANT --}}
+        <div class="bg-white rounded-xl shadow p-6 mb-6 flex gap-4">
+            <img
+                src="{{ !empty($penjual->tenant?->foto_tenant) ? asset('storage/'.$penjual->tenant->foto_tenant) : asset('images/default-store.png') }}"
+                class="w-24 h-24 rounded-xl object-cover"
+                alt="Foto Tenant"
+            >
 
-    </div>
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900">
+                    {{ $penjual->tenant?->tenant_name ?? 'Tenant' }}
+                </h1>
 
-</div>
+                <p class="text-sm text-gray-500">
+                    {{ $penjual->nama_lengkap ?? '-' }}
+                </p>
+            </div>
+        </div>
 
+        {{-- LIST MENU --}}
+<h2 class="text-lg font-semibold mb-4">Menu</h2>
 
+<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+    @forelse(($penjual->products ?? collect()) as $product)
+        <div class="bg-white rounded-xl shadow p-4 flex flex-col">
+            <img
+                src="{{ !empty($product->product_image) ? asset('storage/'.$product->product_image) : asset('images/default-product.png') }}"
+                class="h-36 w-full object-cover rounded-lg mb-3"
+                alt="{{ $product->product_name }}"
+            >
+
+            <h3 class="font-semibold text-sm">
+                {{ $product->product_name }}
+            </h3>
+
+            <p class="text-xs text-gray-500">
+                {{ $product->category->category_name ?? '-' }}
+            </p>
+
+            <p class="text-green-600 font-bold mt-2">
+                Rp {{ number_format($product->product_price, 0, ',', '.') }}
+            </p>
+
+            <button
+                onclick='openMenuModal(
+                    {{ $product->product_id }},
+                    @json($product->product_name),
+                    {{ (int) $product->product_price }},
+                    @json(!empty($product->product_image) ? asset("storage/".$product->product_image) : asset("images/default-product.png")),
+                    @json($product->variants ?? [])
+                )'
+                class="w-full mt-3 bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg"
+            >
+                + Tambah ke Keranjang
+            </button>
+        </div>
+    @empty
+        <div class="col-span-full text-center text-slate-500 bg-white p-6 rounded-xl shadow">
+            Belum ada menu tersedia.
+        </div>
+    @endforelse
 </div>
 
 {{-- MODAL --}}
-
-<div id="menuModal"
-     class="fixed inset-0 bg-black bg-opacity-50 hidden items-end justify-center z-50">
-
-
-<div class="bg-white w-full max-w-md rounded-t-2xl p-6">
-
-    <div class="flex justify-between items-center mb-4">
-
-        <h2 class="text-lg font-bold">
-            Tambahkan Menu
-        </h2>
-
-        <button onclick="closeModal()" class="text-gray-500 text-xl">
-            ✕
-        </button>
-
-    </div>
-
-
-    {{-- INFO PRODUK --}}
-    <div class="flex gap-3 mb-4">
-
-        <img id="modalImage"
-             class="w-20 h-20 rounded object-cover">
-
-        <div>
-            <p id="modalName" class="font-semibold"></p>
-
-            <p id="modalBasePrice"
-               class="text-green-600 font-bold"></p>
+<div id="menuModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-end justify-center z-50">
+    <div class="bg-white w-full max-w-md rounded-t-2xl p-6">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-lg font-bold">Tambahkan Menu</h2>
+            <button type="button" onclick="closeModal()" class="text-gray-500 text-xl">✕</button>
         </div>
 
-    </div>
-
-
-    <form method="POST" action="{{ route('cart.add') }}">
-        @csrf
-
-        <input type="hidden" name="product_id" id="modalProductId">
-        <input type="hidden" name="qty" id="modalQty" value="1">
-        <input type="hidden" name="penjual_id" value="{{ $penjual->penjual_id }}">
-
-
-        {{-- VARIANT --}}
-        <div class="mb-4">
-
-            <p class="font-semibold mb-2">
-                Topping / Variant (Optional)
-            </p>
-
-            <div id="variantContainer" class="space-y-2"></div>
-
+        {{-- INFO PRODUK --}}
+        <div class="flex gap-3 mb-4">
+            <img id="modalImage" class="w-20 h-20 rounded object-cover" alt="Produk">
+            <div>
+                <p id="modalName" class="font-semibold"></p>
+                <p id="modalBasePrice" class="text-green-600 font-bold"></p>
+            </div>
         </div>
 
+        <form method="POST" action="{{ route('cart.add') }}">
+            @csrf
 
-        {{-- QTY --}}
-        <div class="flex items-center gap-3 mb-4">
+            <input type="hidden" name="product_id" id="modalProductId">
+            <input type="hidden" name="qty" id="modalQty" value="1">
+            <input type="hidden" name="penjual_id" value="{{ $penjual->id }}">
 
-            <button type="button"
-                    onclick="decreaseQty()"
-                    class="px-3 py-1 border rounded">
-                -
+            {{-- VARIANT --}}
+            <div class="mb-4">
+                <p class="font-semibold mb-2">Topping / Variant (Optional)</p>
+                <div id="variantContainer" class="space-y-2"></div>
+            </div>
+
+            {{-- QTY --}}
+            <div class="flex items-center gap-3 mb-4">
+                <button type="button" onclick="decreaseQty()" class="px-3 py-1 border rounded">-</button>
+
+                <input id="qty" type="number" value="1" min="1" class="w-14 text-center border rounded">
+
+                <button type="button" onclick="increaseQty()" class="px-3 py-1 border rounded">+</button>
+            </div>
+
+            {{-- TOTAL --}}
+            <div class="border-t pt-3 mb-4">
+                <p class="text-sm text-gray-500">Total Harga</p>
+                <p id="totalPrice" class="text-xl font-bold text-green-600">Rp 0</p>
+            </div>
+
+            <button type="submit" class="w-full bg-red-500 hover:bg-red-600 text-white py-3 rounded-lg">
+                Masukkan ke Keranjang
             </button>
-
-            <input id="qty"
-                   type="number"
-                   value="1"
-                   min="1"
-                   class="w-14 text-center border rounded">
-
-            <button type="button"
-                    onclick="increaseQty()"
-                    class="px-3 py-1 border rounded">
-                +
-            </button>
-
-        </div>
-
-
-        {{-- TOTAL --}}
-        <div class="border-t pt-3 mb-4">
-
-            <p class="text-sm text-gray-500">
-                Total Harga
-            </p>
-
-            <p id="totalPrice"
-               class="text-xl font-bold text-green-600">
-                Rp 0
-            </p>
-
-        </div>
-
-
-        <button type="submit"
-                class="w-full bg-red-500 hover:bg-red-600 text-white py-3 rounded-lg">
-
-            Masukkan ke Keranjang
-
-        </button>
-
-    </form>
-
-</div>
-
-
+        </form>
+    </div>
 </div>
 
 <script>
-
 let basePrice = 0;
 
-function openMenuModal(id,name,price,image,variants)
-{
+function openMenuModal(id, name, price, image, variants) {
     const modal = document.getElementById('menuModal');
-
     modal.classList.remove('hidden');
     modal.classList.add('flex');
 
-    basePrice = price;
+    basePrice = Number(price) || 0;
 
     document.getElementById('modalProductId').value = id;
-
     document.getElementById('modalName').innerText = name;
-
     document.getElementById('modalBasePrice').innerText =
-        "Rp " + new Intl.NumberFormat('id-ID').format(price);
-
+        "Rp " + new Intl.NumberFormat('id-ID').format(basePrice);
     document.getElementById('modalImage').src = image;
 
     document.getElementById('qty').value = 1;
+    document.getElementById('modalQty').value = 1;
 
-    renderVariants(variants);
-
+    renderVariants(Array.isArray(variants) ? variants : []);
     calculateTotal();
 }
 
-
-function renderVariants(variants)
-{
-    let container = document.getElementById("variantContainer");
-
+function renderVariants(variants) {
+    const container = document.getElementById('variantContainer');
     container.innerHTML = "";
 
     variants.forEach(v => {
+        const variantName  = v.variant_name ?? 'Variant';
+        const variantPrice = Number(v.variant_price ?? 0);
 
         container.innerHTML += `
-        <label class="flex justify-between border-b py-2">
-
-            <span>${v.variant_name}</span>
-
-            <span class="text-sm text-gray-500">
-                + Rp ${new Intl.NumberFormat('id-ID').format(v.variant_price)}
-            </span>
-
-            <input 
-                type="checkbox"
-                class="variantCheckbox"
-                value="${v.variant_price}"
-                onchange="calculateTotal()"
-            >
-
-        </label>
+            <label class="flex justify-between items-center border-b py-2 gap-2">
+                <span>${variantName}</span>
+                <span class="text-sm text-gray-500">
+                    + Rp ${new Intl.NumberFormat('id-ID').format(variantPrice)}
+                </span>
+                <input 
+                    type="checkbox"
+                    class="variantCheckbox"
+                    value="${variantPrice}"
+                    onchange="calculateTotal()"
+                >
+            </label>
         `;
-
     });
 }
 
-
-function increaseQty()
-{
-    let qty = document.getElementById('qty');
-
-    qty.value = parseInt(qty.value) + 1;
-
+function increaseQty() {
+    const qty = document.getElementById('qty');
+    qty.value = parseInt(qty.value || 1) + 1;
     document.getElementById('modalQty').value = qty.value;
-
     calculateTotal();
 }
 
-
-function decreaseQty()
-{
-    let qty = document.getElementById('qty');
-
-    if(qty.value > 1)
-    {
-        qty.value = parseInt(qty.value) - 1;
-    }
-
+function decreaseQty() {
+    const qty = document.getElementById('qty');
+    const current = parseInt(qty.value || 1);
+    qty.value = current > 1 ? current - 1 : 1;
     document.getElementById('modalQty').value = qty.value;
-
     calculateTotal();
 }
 
-
-function calculateTotal()
-{
-    let qty = document.getElementById("qty").value;
-
+function calculateTotal() {
+    const qty = parseInt(document.getElementById("qty").value || 1);
     let variantTotal = 0;
 
     document.querySelectorAll(".variantCheckbox:checked").forEach(v => {
-
-        variantTotal += parseInt(v.value);
-
+        variantTotal += parseInt(v.value || 0);
     });
 
-    let total = (basePrice + variantTotal) * qty;
+    const total = (basePrice + variantTotal) * qty;
 
     document.getElementById("totalPrice").innerText =
         "Rp " + new Intl.NumberFormat('id-ID').format(total);
 }
 
-
-function closeModal()
-{
+function closeModal() {
     const modal = document.getElementById('menuModal');
-
     modal.classList.remove('flex');
     modal.classList.add('hidden');
 }
-
 </script>
-
 @endsection

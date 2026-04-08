@@ -6,24 +6,25 @@ use Illuminate\Database\Eloquent\Model;
 
 class Produk extends Model
 {
-    protected $primaryKey = 'produk_id';
+    protected $table = 'produks';
+    protected $primaryKey = 'id';
 
     protected $fillable = [
-        'kategoris_id','tenants_id','nama','deskripsi','harga','stok','foto_produk'
+        'kategoris_id', 'tenants_id', 'nama', 'deskripsi', 'harga', 'stok', 'foto_produk'
     ];
 
-    public function kategori()
+    public function kategoris()
     {
-        return $this->belongsTo(Kategori::class);
+        return $this->belongsTo(Kategori::class, 'kategoris_id', 'id');
     }
 
     public function tenant()
     {
-        return $this->belongsTo(Tenants::class);
+        return $this->belongsTo(Tenants::class, 'tenants_id', 'id');
     }
 
     public function variants()
     {
-        return $this->hasMany(Variant::class);
+        return $this->hasMany(Variant::class, 'produk_id', 'id');
     }
 }

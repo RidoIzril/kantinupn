@@ -1,8 +1,9 @@
+{{-- resources/views/penjual/sidebarpenjual.blade.php --}}
+
 {{-- OVERLAY MOBILE --}}
 <div id="sidebar-overlay"
      class="fixed inset-0 bg-black/50 z-40 hidden md:hidden"
-     onclick="toggleSidebar()">
-</div>
+     onclick="toggleSidebar()"></div>
 
 {{-- SIDEBAR --}}
 <aside id="sidebar"
@@ -15,7 +16,8 @@
     {{-- LOGO --}}
     <div class="flex items-center gap-3 px-6 py-5 border-b border-green-700">
         <img src="{{ asset('template/dist/assets/compiled/png/LogoKantin.png') }}"
-             class="w-10 h-10 object-contain">
+             class="w-10 h-10 object-contain"
+             alt="Logo NKRI">
         <div>
             <h1 class="text-lg font-bold">NKRI</h1>
             <p class="text-xs text-green-200">Kantin UPNVJT</p>
@@ -38,7 +40,7 @@
         {{-- Produk --}}
         <a href="{{ route('produk.list_produk') }}"
            class="flex items-center gap-3 px-4 py-2 rounded-lg transition
-           {{ request()->routeIs('produk.list_produk*')
+           {{ request()->routeIs('produk.*')
                 ? 'bg-green-700 text-white'
                 : 'text-green-200 hover:bg-green-700 hover:text-white' }}">
             <i class="bi bi-box-seam text-lg"></i>
@@ -65,12 +67,23 @@
             <span class="text-sm font-medium">Transaksi</span>
         </a>
 
+        {{-- Profile --}}
+        <a href="{{ route('penjual.profile.show') }}"
+           class="flex items-center gap-3 px-4 py-2 rounded-lg transition
+           {{ request()->routeIs('penjual.profile.*')
+                ? 'bg-green-700 text-white'
+                : 'text-green-200 hover:bg-green-700 hover:text-white' }}">
+            <i class="bi bi-person-circle text-lg"></i>
+            <span class="text-sm font-medium">Profile</span>
+        </a>
+
         <hr class="border-green-700 my-4">
 
-        {{-- Logout --}}
-        <button type="button" onclick="handleLogout()"
-            class="w-full flex items-center gap-3 px-4 py-2 rounded-lg
-                   text-red-300 hover:bg-red-500 hover:text-white transition">
+        {{-- Logout via API --}}
+        <button type="button"
+                onclick="handleLogout()"
+                class="w-full flex items-center gap-3 px-4 py-2 rounded-lg
+                       text-red-300 hover:bg-red-500 hover:text-white transition">
             <i class="bi bi-box-arrow-left text-lg"></i>
             <span class="text-sm font-medium">Logout</span>
         </button>
@@ -81,13 +94,17 @@
         © {{ date('Y') }} Kantin NKRI
     </div>
 </aside>
+
+@push('scripts')
 <script>
 async function handleLogout() {
     const token = localStorage.getItem('token');
+    const logoutUrl = "{{ url('/api/logout') }}";
+    const loginUrl  = "{{ url('/login') }}";
 
     try {
         if (token) {
-            await fetch('/api/logout', {
+            await fetch(logoutUrl, {
                 method: 'POST',
                 headers: {
                     'Accept': 'application/json',
@@ -95,12 +112,13 @@ async function handleLogout() {
                 }
             });
         }
-    } catch (e) {
-        console.error(e);
+    } catch (err) {
+        console.error('Logout API gagal:', err);
     } finally {
         localStorage.removeItem('token');
         localStorage.removeItem('role');
-        window.location.href = '/login';
+        window.location.replace(loginUrl);
     }
 }
 </script>
+@endpush
