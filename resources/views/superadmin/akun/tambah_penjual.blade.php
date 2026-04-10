@@ -33,7 +33,7 @@
             class="w-full px-4 py-2 rounded">
 
     {{-- NAMA TENANT --}}
-    <input name="penjual_tenantname"
+    <input name="nama_lengkap"
            class="w-full border p-2 rounded"
            placeholder="Nama Tenant"
            required>

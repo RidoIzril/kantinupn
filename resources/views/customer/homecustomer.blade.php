@@ -4,7 +4,7 @@
 const token = localStorage.getItem('token');
 const role  = localStorage.getItem('role');
 
-if(!token || role !== 'customer'){
+if (!token || role !== 'customer') {
     window.location.href = '/login';
 }
 </script>
@@ -18,14 +18,21 @@ if(!token || role !== 'customer'){
     {{-- MAIN --}}
     <div class="flex-1 p-6 max-w-7xl mx-auto">
 
-        {{-- SEARCH BAR --}}
-        <form method="GET" class="mb-6">
+        {{-- SEARCH BAR + BUTTON --}}
+        <form method="GET" class="mb-6 flex gap-3">
             <input
                 type="text"
                 name="keyword"
                 value="{{ request('keyword') }}"
                 placeholder="Cari menu atau penjual..."
-                class="w-full h-12 px-5 rounded-full border border-slate-300 bg-white focus:outline-none focus:border-green-600">
+                class="flex-1 h-12 px-5 rounded-full border border-slate-300 bg-white focus:outline-none focus:border-green-600"
+            >
+
+            <button
+                type="submit"
+                class="h-12 px-6 rounded-full bg-green-600 text-white font-semibold hover:bg-green-700 transition">
+                Search
+            </button> 
         </form>
 
         {{-- JUDUL --}}
@@ -36,6 +43,10 @@ if(!token || role !== 'customer'){
         {{-- LIST PENJUAL --}}
         <div class="space-y-4">
             @forelse ($penjuals as $penjual)
+                @php
+                    $produkList = $penjual->tenant->produks ?? collect();
+                @endphp
+
                 <div class="bg-white rounded-xl shadow-sm p-4">
 
                     {{-- HEADER PENJUAL --}}
@@ -52,28 +63,28 @@ if(!token || role !== 'customer'){
                             </h3>
 
                             <p class="text-sm text-slate-500">
-                                {{ $penjual->products_count ?? (($penjual->products ?? collect())->count()) }} menu tersedia
+                                {{ $produkList->count() }} menu tersedia
                             </p>
                         </div>
                     </div>
 
-                    {{-- MENU (MUNCUL HANYA SAAT SEARCH) --}}
+                    {{-- MENU (MUNCUL SAAT SEARCH) --}}
                     @if ($keyword)
                         <div class="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
-                            @forelse (($penjual->products ?? collect()) as $product)
+                            @forelse ($produkList as $product)
                                 <div class="text-center">
                                     <img
-                                        src="{{ !empty($product->product_image) ? asset('storage/'.$product->product_image) : asset('images/default-product.png') }}"
+                                        src="{{ !empty($product->foto_produk) ? asset('storage/'.$product->foto_produk) : asset('images/default-product.png') }}"
                                         class="w-full h-24 object-cover rounded-lg mb-1"
-                                        alt="{{ $product->product_name }}"
+                                        alt="{{ $product->nama }}"
                                     >
 
                                     <p class="text-sm font-medium line-clamp-1">
-                                        {{ $product->product_name }}
+                                        {{ $product->nama }}
                                     </p>
 
                                     <p class="text-sm text-green-600 font-semibold">
-                                        Rp {{ number_format($product->product_price, 0, ',', '.') }}
+                                        Rp {{ number_format($product->harga, 0, ',', '.') }}
                                     </p>
                                 </div>
                             @empty

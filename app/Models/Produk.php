@@ -23,8 +23,9 @@ class Produk extends Model
         return $this->belongsTo(Tenants::class, 'tenants_id', 'id');
     }
 
-    public function variants()
+     public function variants()
     {
-        return $this->hasMany(Variant::class, 'produk_id', 'id');
+        // FIX PENTING: foreign key di tabel variants adalah produks_id
+        return $this->hasMany(Variant::class, 'produks_id');
     }
 }

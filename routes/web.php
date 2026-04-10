@@ -109,7 +109,7 @@ Route::prefix('penjual')->group(function () {
     Route::get('/profile/edit', [PenjualController::class, 'profileEdit'])->name('penjual.profile.edit');
     Route::put('/profile/update', [PenjualController::class, 'profileUpdate'])->name('penjual.profile.update');
     Route::delete('/profile/delete', [PenjualController::class, 'profileDestroy'])->name('penjual.profile.destroy');
-    
+
     Route::get('/kelola_transaksi', [ManageController::class, 'index'])
         ->name('penjual.transaction_manage.manage');
 
@@ -174,25 +174,11 @@ Route::prefix('superadmin')
     Route::delete('/kategori/{id}', [CategoryController::class, 'destroy'])
         ->name('kategori.destroy');
 
-    Route::get('/penjual', [SuperadminController::class, 'penjual'])
-        ->name('penjual.index');
-
-    Route::get('/penjual/tambah', [SuperadminController::class, 'createPenjual'])
-        ->name('penjual.create');
-
-    Route::post('/penjual', [SuperadminController::class, 'storePenjual'])
-        ->name('penjual.store');
-
-    Route::get('/penjual/{id}/edit', [SuperadminController::class, 'editPenjual'])
-        ->name('penjual.edit');
-
-    Route::put('/penjual/{id}', [SuperadminController::class, 'updatePenjual'])
-        ->name('penjual.update');
-
-    Route::put('/penjual/{id}/status', [SuperadminController::class, 'updateStatus'])
-        ->name('penjual.update_status');
-
-    Route::delete('/penjual/{id}', [SuperadminController::class, 'destroyPenjual'])
-        ->name('penjual.destroy');
-
+     Route::get('/penjual', [SuperadminController::class, 'penjual'])->name('penjual.index');
+    Route::get('/penjual/create', [SuperadminController::class, 'createPenjual'])->name('penjual.create');
+    Route::post('/penjual', [SuperadminController::class, 'storePenjual'])->name('penjual.store');
+    Route::get('/penjual/{id}/edit', [SuperadminController::class, 'editPenjual'])->name('penjual.edit');
+    Route::put('/penjual/{id}', [SuperadminController::class, 'updatePenjual'])->name('penjual.update');
+    Route::put('/penjual/{id}/status', [SuperadminController::class, 'updateStatus'])->name('penjual.update_status');
+    Route::delete('/penjual/{id}', [SuperadminController::class, 'destroyPenjual'])->name('penjual.destroy');
 });

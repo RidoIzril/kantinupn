@@ -26,61 +26,53 @@
 <form method="POST"
       action="{{ route('superadmin.kategori.store') }}"
       class="flex gap-3 mb-6">
- @csrf
-
- <input name="category_code"
-        class="border px-3 py-2 rounded w-32"
-        placeholder="Kode"
-        maxlength="5"
-        required>
-
- <input name="category_name"
-        class="border px-3 py-2 rounded w-64"
-        placeholder="Nama kategori"
-        required>
-
- <button class="bg-green-600 text-white px-4 rounded">
-     Tambah
- </button>
-</form>
-
-{{-- TABLE --}}
-<table class="w-full bg-white rounded shadow">
- <thead class="bg-gray-100">
-  <tr>
-   <th class="p-3 text-left">Kode</th>
-   <th class="p-3 text-left">Nama</th>
-   <th class="p-3 text-right">Aksi</th>
-  </tr>
- </thead>
- <tbody>
- @foreach($categories as $k)
- <tr class="border-b">
-  <td class="p-3">{{ $k->category_code }}</td>
-  <td class="p-3">{{ $k->category_name }}</td>
-  <td class="p-3 text-right">
-   <form method="POST"
-      action="{{ route('superadmin.kategori.destroy', $k->category_id) }}"
-      onsubmit="return confirm('Yakin hapus kategori ini?')">
     @csrf
-    @method('DELETE')
+    <input name="nama_kategori"
+           class="border px-3 py-2 rounded w-64"
+           placeholder="Nama kategori"
+           value="{{ old('nama_kategori') }}"
+           required>
 
-    <button class="text-red-600 hover:underline">
-        Hapus
+    <button type="submit" class="bg-green-600 text-white px-4 rounded">
+        Tambah
     </button>
 </form>
 
-  </td>
- </tr>
- @endforeach
+{{-- TABLE (dibuat lebih kecil & rapat) --}}
+<div class="inline-block bg-white rounded shadow border">
+    <table class="w-auto inline-table border-collapse">
+        <thead class="bg-gray-100">
+            <tr>
+                <th class="px-4 py-2 text-left whitespace-nowrap">Nama Kategori</th>
+                <th class="px-4 py-2 text-left whitespace-nowrap">Aksi</th>
+            </tr>
+        </thead>
+        <tbody>
+            @forelse($categories as $k)
+                <tr class="border-t">
+                    <td class="px-4 py-2 whitespace-nowrap">{{ $k->nama_kategori }}</td>
+                    <td class="px-4 py-2 whitespace-nowrap">
+                        <form method="POST"
+                              action="{{ route('superadmin.kategori.destroy', $k->id) }}"
+                              onsubmit="return confirm('Yakin hapus kategori ini?')"
+                              class="inline">
+                            @csrf
+                            @method('DELETE')
 
- @if($categories->isEmpty())
- <tr>
-  <td colspan="3" class="p-4 text-center text-gray-500">
-      Belum ada kategori
-  </td>
- </tr>
- @endif
- </tbody>
-</table>
+                            <button type="submit" class="text-red-600 hover:underline">
+                                Hapus
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+            @empty
+                <tr>
+                    <td colspan="2" class="px-4 py-3 text-center text-gray-500">
+                        Belum ada kategori
+                    </td>
+                </tr>
+            @endforelse
+        </tbody>
+    </table>
+</div>
 @endsection

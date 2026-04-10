@@ -4,98 +4,95 @@
 @section('content')
 <h1 class="text-xl font-bold mb-6">Edit Akun Penjual</h1>
 
-{{-- ERROR --}}
 @if ($errors->any())
-<div class="bg-red-100 text-red-700 p-3 rounded mb-4">
-    <ul class="list-disc ml-5">
-        @foreach ($errors->all() as $error)
-            <li>{{ $error }}</li>
-        @endforeach
-    </ul>
-</div>
+    <div class="bg-red-100 text-red-700 p-3 rounded mb-4">
+        <ul class="list-disc ml-5">
+            @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
 @endif
 
 <form method="POST"
-      action="{{ route('superadmin.penjual.update', $penjual->penjual_id) }}"
+      action="{{ route('superadmin.penjual.update', $penjual->id) }}"
+      enctype="multipart/form-data"
       class="space-y-4 max-w-xl">
-@csrf
-@method('PUT')
+    @csrf
+    @method('PUT')
 
-{{-- NAMA --}}
-<input name="penjual_fullname"
-       value="{{ old('penjual_fullname', $penjual->penjual_fullname) }}"
-       class="w-full border p-2 rounded"
-       placeholder="Nama Lengkap"
-       required>
+    {{-- USERNAME --}}
+    <input name="username"
+           value="{{ old('username', $penjual->username) }}"
+           class="w-full border p-2 rounded"
+           placeholder="Username"
+           required>
 
-{{-- NO TENANT --}}
-<input name="penjual_notenant"
-       value="{{ old('penjual_notenant', $penjual->penjual_notenant) }}"
-       class="w-full border p-2 rounded"
-       placeholder="No Tenant"
-       required>
+    {{-- PASSWORD --}}
+    <input type="password"
+           name="password"
+           class="w-full border p-2 rounded"
+           placeholder="Password baru (kosongkan jika tidak diubah)">
 
-{{-- NAMA TENANT --}}
-<input name="penjual_tenantname"
-       value="{{ old('penjual_tenantname', $penjual->penjual_tenantname) }}"
-       class="w-full border p-2 rounded"
-       placeholder="Nama Tenant"
-       required>
+    {{-- NAMA LENGKAP --}}
+    <input name="nama_lengkap"
+           value="{{ old('nama_lengkap', $penjual->nama_lengkap) }}"
+           class="w-full border p-2 rounded"
+           placeholder="Nama Lengkap"
+           required>
 
-{{-- NO HP --}}
-<input name="penjual_nohp"
-       value="{{ old('penjual_nohp', $penjual->penjual_nohp) }}"
-       class="w-full border p-2 rounded"
-       placeholder="No HP"
-       required>
+    {{-- KONTAK --}}
+    <input name="kontak"
+           value="{{ old('kontak', $penjual->kontak) }}"
+           class="w-full border p-2 rounded"
+           placeholder="No HP / Kontak"
+           required>
 
-{{-- GENDER --}}
-<select name="penjual_gender" class="w-full border p-2 rounded" required>
-    <option value="Laki-laki" {{ $penjual->penjual_gender == 'Laki-laki' ? 'selected' : '' }}>
-        Laki-laki
-    </option>
-    <option value="Perempuan" {{ $penjual->penjual_gender == 'Perempuan' ? 'selected' : '' }}>
-        Perempuan
-    </option>
-</select>
-
-{{-- STATUS (INI YANG BARU) --}}
-<div>
-    <label class="block text-sm font-medium mb-1">Status Akun</label>
-    <select name="penjual_status"
-            class="w-full border p-2 rounded"
-            required>
-        <option value="aktif" {{ $penjual->penjual_status == 'aktif' ? 'selected' : '' }}>
-            Aktif
-        </option>
-        <option value="nonaktif" {{ $penjual->penjual_status == 'nonaktif' ? 'selected' : '' }}>
-            Nonaktif
-        </option>
+    {{-- GENDER --}}
+    <select name="gender" class="w-full border p-2 rounded" required>
+        <option value="">Pilih Gender</option>
+        <option value="Laki-Laki" {{ old('gender', $penjual->gender) == 'Laki-Laki' ? 'selected' : '' }}>Laki-Laki</option>
+        <option value="Perempuan" {{ old('gender', $penjual->gender) == 'Perempuan' ? 'selected' : '' }}>Perempuan</option>
     </select>
-</div>
 
-{{-- USERNAME --}}
-<input name="penjual_username"
-       value="{{ old('penjual_username', $penjual->penjual_username) }}"
-       class="w-full border p-2 rounded"
-       placeholder="Username"
-       required>
+    {{-- STATUS --}}
+    <select name="status" class="w-full border p-2 rounded" required>
+        <option value="aktif" {{ old('status', $penjual->status) == 'aktif' ? 'selected' : '' }}>Aktif</option>
+        <option value="nonaktif" {{ old('status', $penjual->status) == 'nonaktif' ? 'selected' : '' }}>Nonaktif</option>
+    </select>
 
-{{-- PASSWORD --}}
-<input type="password"
-       name="penjual_password"
-       class="w-full border p-2 rounded"
-       placeholder="Password baru (kosongkan jika tidak diubah)">
+    {{-- NAMA TENANT --}}
+    <input name="tenant_name"
+           value="{{ old('tenant_name', $penjual->tenant_name) }}"
+           class="w-full border p-2 rounded"
+           placeholder="Nama Tenant">
 
-{{-- ACTION --}}
-<div class="flex gap-3">
-    <button class="bg-blue-600 text-white px-4 py-2 rounded">
-        Update
-    </button>
-    <a href="{{ route('superadmin.penjual.index') }}"
-       class="bg-gray-300 px-4 py-2 rounded">
-        Kembali
-    </a>
-</div>
+    {{-- NO TENANT --}}
+    <input name="no_tenant"
+           value="{{ old('no_tenant', $penjual->no_tenant) }}"
+           class="w-full border p-2 rounded"
+           placeholder="No Tenant">
+
+    {{-- FOTO TENANT --}}
+    <input type="file"
+           name="foto_tenant"
+           class="w-full border p-2 rounded">
+
+    @if(!empty($penjual->foto_tenant))
+        <p class="text-sm text-gray-600">
+            Foto saat ini:
+            <a href="{{ asset('storage/' . $penjual->foto_tenant) }}" target="_blank" class="text-blue-600 underline">Lihat</a>
+        </p>
+    @endif
+
+    <div class="flex gap-3">
+        <button class="bg-blue-600 text-white px-4 py-2 rounded">
+            Update
+        </button>
+        <a href="{{ route('superadmin.penjual.index') }}"
+           class="bg-gray-300 px-4 py-2 rounded">
+            Kembali
+        </a>
+    </div>
 </form>
 @endsection

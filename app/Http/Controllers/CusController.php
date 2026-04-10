@@ -18,15 +18,8 @@ class CusController extends Controller
             ->whereHas('tenant')
             ->with([
                 'tenant',
-                'tenant.produks' => function ($q) use ($keyword, $categoryId) {
+                'tenant.produks' => function ($q) use ($categoryId) {
                     $q->where('stok', '>', 0);
-
-                    if ($keyword !== '') {
-                        $q->where(function ($qq) use ($keyword) {
-                            $qq->where('nama', 'like', "%{$keyword}%")
-                               ->orWhere('deskripsi', 'like', "%{$keyword}%");
-                        });
-                    }
 
                     if (!empty($categoryId)) {
                         $q->where('kategoris_id', $categoryId);
@@ -36,6 +29,7 @@ class CusController extends Controller
                 }
             ]);
 
+        // filter daftar penjual jika ada keyword
         if ($keyword !== '') {
             $query->where(function ($q) use ($keyword, $categoryId) {
                 $q->whereHas('tenant', function ($t) use ($keyword) {
@@ -56,6 +50,32 @@ class CusController extends Controller
         }
 
         $penjuals = $query->get();
+
+        // post-filter produk per penjual:
+        // jika keyword cocok tenant, tampilkan semua produk stok>0
+        // jika tidak, filter produk by keyword
+        if ($keyword !== '') {
+            $penjuals->each(function ($penjual) use ($keyword) {
+                $tenantName = strtolower((string) optional($penjual->tenant)->tenant_name);
+                $kw = strtolower($keyword);
+
+                $matchTenant = str_contains($tenantName, $kw);
+
+                $produk = $penjual->tenant?->produks ?? collect();
+
+                if (!$matchTenant) {
+                    $produk = $produk->filter(function ($p) use ($kw) {
+                        return str_contains(strtolower((string) $p->nama), $kw)
+                            || str_contains(strtolower((string) $p->deskripsi), $kw);
+                    })->values();
+                }
+
+                // overwrite relasi loaded supaya blade baca data final
+                if ($penjual->tenant) {
+                    $penjual->tenant->setRelation('produks', $produk);
+                }
+            });
+        }
 
         return view('customer.homecustomer', [
             'penjuals'  => $penjuals,

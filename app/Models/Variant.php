@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Variant extends Model
 {
-    protected $primaryKey = 'variant_id';
+    protected $primaryKey = 'id';
 
     protected $fillable = [
         'produks_id','nama_variant','harga_variant'

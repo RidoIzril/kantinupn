@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthApiController;
 use App\Http\Controllers\PenjualController;
+use App\Http\Controllers\SuperadminController;
 
 Route::post('/login', [AuthApiController::class, 'login']);
 Route::post('/register', [AuthApiController::class, 'register']);
@@ -21,4 +22,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/penjual/dashboard', [PenjualController::class, 'index']);
     Route::get('/penjual/profile', [PenjualController::class, 'profile']);
     Route::put('/penjual/profile/update', [PenjualController::class, 'profileUpdate']);
+
+    Route::prefix('superadmin')->group(function () {
+    Route::get('/penjual', [SuperadminController::class, 'apiIndexPenjual']);
+    Route::post('/penjual', [SuperadminController::class, 'apiStorePenjual']);
+    });
 });
