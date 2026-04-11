@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class CartItem extends Model
 {
-    protected $primaryKey = 'cartitems_id';
+    protected $primaryKey = 'id';
 
     protected $fillable = [
         'carts_id','produks_id','variants_id',
@@ -15,16 +15,16 @@ class CartItem extends Model
 
     public function cart()
     {
-        return $this->belongsTo(Cart::class);
+        return $this->belongsTo(Cart::class, 'carts_id');
     }
 
     public function produk()
     {
-        return $this->belongsTo(Produk::class);
+        return $this->belongsTo(Produk::class, 'produks_id');
     }
 
     public function variant()
     {
-        return $this->belongsTo(Variant::class);
+        return $this->belongsTo(Variant::class, 'variants_id');
     }
 }

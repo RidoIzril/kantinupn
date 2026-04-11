@@ -10,6 +10,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
+use Laravel\Sanctum\PersonalAccessToken;
 
 class PenjualController extends Controller
 {
@@ -18,12 +21,26 @@ class PenjualController extends Controller
         return $request->is('api/*') || $request->expectsJson() || $request->wantsJson();
     }
 
+    private function resolveUser(Request $request)
+    {
+        $user = $request->user() ?? auth()->user();
+        if ($user) return $user;
+
+        $plainTextToken = $request->query('token')
+            ?? $request->input('token')
+            ?? $request->bearerToken();
+
+        if (!$plainTextToken) return null;
+
+        $accessToken = PersonalAccessToken::findToken($plainTextToken);
+        return $accessToken?->tokenable;
+    }
+
     private function unauthorizedResponse(Request $request)
     {
         if ($this->isApiRequest($request)) {
             return response()->json(['message' => 'Unauthorized'], 401);
         }
-
         return redirect()->route('login');
     }
 
@@ -32,21 +49,15 @@ class PenjualController extends Controller
         if ($this->isApiRequest($request)) {
             return response()->json(['message' => 'Forbidden: role bukan penjual'], 403);
         }
-
         return redirect()->route('login');
     }
 
     public function index(Request $request)
     {
-        $user = $request->user() ?? auth()->user();
+        $user = $this->resolveUser($request);
 
-        if (!$user) {
-            return $this->unauthorizedResponse($request);
-        }
-
-        if (strtolower((string) $user->role) !== 'penjual') {
-            return $this->forbiddenRoleResponse($request);
-        }
+        if (!$user) return $this->unauthorizedResponse($request);
+        if (strtolower((string) $user->role) !== 'penjual') return $this->forbiddenRoleResponse($request);
 
         $penjual = $user->penjual;
         if (!$penjual) {
@@ -61,7 +72,6 @@ class PenjualController extends Controller
 
         $jumlahProduk = $tenantId ? Produk::where('tenants_id', $tenantId)->count() : 0;
 
-        // default statistik
         $transaksiPending = 0;
         $transaksiDibatalkan = 0;
         $transaksiSelesai = 0;
@@ -69,64 +79,54 @@ class PenjualController extends Controller
         $totalPendapatan = 0;
 
         try {
-            // NOTE:
-            // Sesuaikan nama tabel/kolom jika skema kamu beda.
-            // Di sini diasumsikan:
-            // transaksis.orders_id -> orders.order_id
-            // detailorder.order_id -> orders.order_id
-            // detailorder.product_id -> produk.produk_id
-            // produk.tenants_id -> tenants.id
-            // tenants.penjuals_id -> penjual.id
             $transaksiBase = DB::table('transaksis as t')
-                ->join('orders as o', 'o.order_id', '=', 't.orders_id')
-                ->join('detailorder as d', 'd.order_id', '=', 'o.order_id')
-                ->join('produk as p', 'p.produk_id', '=', 'd.product_id')
+                ->join('orders as o', 'o.id', '=', 't.orders_id')
+                ->join('detailorders as d', 'd.orders_id', '=', 'o.id')
+                ->join('produks as p', 'p.id', '=', 'd.produks_id')
                 ->join('tenants as tn', 'tn.id', '=', 'p.tenants_id')
                 ->where('tn.penjuals_id', $penjualId)
-                ->select('t.transaksis_id', 't.status_pembayaran', 'o.order_status', 'o.total_harga')
+                ->select('t.id', 't.status_pembayaran', 'o.status_order', 'o.total_harga')
                 ->distinct();
 
             $transaksiPending = (clone $transaksiBase)
                 ->where(function ($q) {
                     $q->where('t.status_pembayaran', 'pending')
-                      ->orWhere('o.order_status', 'pending');
-                })->count('t.transaksis_id');
+                      ->orWhere('o.status_order', 'pending');
+                })->count('t.id');
 
             $transaksiDibatalkan = (clone $transaksiBase)
                 ->where(function ($q) {
                     $q->where('t.status_pembayaran', 'failed')
-                      ->orWhere('o.order_status', 'failed')
-                      ->orWhere('o.order_status', 'cancelled');
-                })->count('t.transaksis_id');
+                      ->orWhere('o.status_order', 'failed')
+                      ->orWhere('o.status_order', 'cancelled');
+                })->count('t.id');
 
             $transaksiSelesai = (clone $transaksiBase)
                 ->where(function ($q) {
                     $q->where('t.status_pembayaran', 'paid')
-                      ->orWhere('o.order_status', 'done')
-                      ->orWhere('o.order_status', 'completed');
-                })->count('t.transaksis_id');
+                      ->orWhere('o.status_order', 'done')
+                      ->orWhere('o.status_order', 'completed');
+                })->count('t.id');
 
             $produkDalamPengiriman = (clone $transaksiBase)
                 ->where(function ($q) {
-                    $q->where('o.order_status', 'delivered')
-                      ->orWhere('o.order_status', 'shipped')
-                      ->orWhere('o.order_status', 'on_delivery');
-                })->count('t.transaksis_id');
+                    $q->where('o.status_order', 'delivered')
+                      ->orWhere('o.status_order', 'shipped')
+                      ->orWhere('o.status_order', 'on_delivery');
+                })->count('t.id');
 
             $totalPendapatan = (clone $transaksiBase)
                 ->where(function ($q) {
                     $q->where('t.status_pembayaran', 'paid')
-                      ->orWhere('o.order_status', 'done')
-                      ->orWhere('o.order_status', 'completed');
+                      ->orWhere('o.status_order', 'done')
+                      ->orWhere('o.status_order', 'completed');
                 })->sum('o.total_harga');
-
         } catch (\Throwable $e) {
             Log::error('Dashboard penjual query error', [
                 'message' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
             ]);
-            // fallback tetap 200 agar UI tidak blank
         }
 
         $jumlahCustomer = Customers::count();
@@ -166,7 +166,7 @@ class PenjualController extends Controller
 
     public function profile(Request $request)
     {
-        $user = $request->user() ?? auth()->user();
+        $user = $this->resolveUser($request);
 
         if (!$user) return $this->unauthorizedResponse($request);
         if (strtolower((string) $user->role) !== 'penjual') return $this->forbiddenRoleResponse($request);
@@ -177,39 +177,53 @@ class PenjualController extends Controller
         );
 
         if ($this->isApiRequest($request)) {
-            return response()->json(['message' => 'Profile penjual berhasil diambil', 'data' => $penjual], 200);
+            return response()->json([
+                'message' => 'Profile penjual berhasil diambil',
+                'data' => ['penjual' => $penjual, 'user' => $user]
+            ], 200);
         }
 
-        return view('penjual.profile.index', compact('penjual'));
+        return view('penjual.profile.index', compact('penjual', 'user'));
     }
 
     public function profileEdit(Request $request)
     {
-        $user = $request->user() ?? auth()->user();
-        if (!$user || strtolower((string) $user->role) !== 'penjual') return redirect()->route('login');
+        $user = $this->resolveUser($request);
+
+        if (!$user) return $this->unauthorizedResponse($request);
+        if (strtolower((string) $user->role) !== 'penjual') return $this->forbiddenRoleResponse($request);
 
         $penjual = Penjual::with('tenant')->firstOrCreate(
             ['users_id' => $user->id],
             ['nama_lengkap' => '', 'kontak' => '', 'gender' => '', 'status' => 'aktif']
         );
 
-        return view('penjual.profile.edit', compact('penjual'));
+        return view('penjual.profile.edit', compact('penjual', 'user'));
     }
 
     public function profileUpdate(Request $request)
     {
-        $user = $request->user() ?? auth()->user();
-        if (!$user) return $this->unauthorizedResponse($request);
-        if (strtolower((string) $user->role) !== 'penjual') return $this->forbiddenRoleResponse($request);
+        $user = $this->resolveUser($request);
+
+        if (!$user) {
+            return back()->withInput()->withErrors(['auth' => 'Session/token tidak valid, silakan login ulang.']);
+        }
+        if (strtolower((string) $user->role) !== 'penjual') {
+            return back()->withInput()->withErrors(['auth' => 'Akses ditolak.']);
+        }
 
         $request->validate([
-            'nama_lengkap' => 'required|string|max:255',
-            'kontak'       => 'nullable|string|max:50',
-            'gender'       => 'nullable|string|max:20',
-            'status'       => 'required|string|max:20',
-            'tenant_name'  => 'required|string|max:255',
-            'no_tenant'    => 'nullable|string|max:50',
-            'foto_tenant'  => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'username'      => ['required', 'string', 'max:255', Rule::unique('users', 'username')->ignore($user->id)],
+            'nama_lengkap'  => 'required|string|max:255',
+            'kontak'        => 'nullable|string|max:50',
+            'gender'        => 'nullable|in:Laki-Laki,Perempuan',
+            'status'        => 'required|string|max:20',
+            'tenant_name'   => 'required|string|max:255',
+            'no_tenant'     => 'nullable|string|max:50',
+            'foto_tenant'   => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'current_password' => 'nullable|string',
+            'new_password'     => 'nullable|string|min:6|confirmed',
+            'token'            => 'nullable|string',
         ]);
 
         $penjual = Penjual::with('tenant')->firstOrCreate(
@@ -219,17 +233,29 @@ class PenjualController extends Controller
 
         DB::beginTransaction();
         try {
+            $user->username = $request->username;
+
+            if ($request->filled('new_password')) {
+                if (!$request->filled('current_password') || !Hash::check($request->current_password, $user->password)) {
+                    DB::rollBack();
+                    return back()->withInput()->withErrors(['current_password' => 'Password saat ini salah.']);
+                }
+                $user->password = Hash::make($request->new_password);
+            }
+
+            $user->save();
+
             $penjual->update([
                 'nama_lengkap' => $request->nama_lengkap,
-                'kontak' => $request->kontak,
-                'gender' => $request->gender,
-                'status' => $request->status,
+                'kontak'       => $request->kontak,
+                'gender'       => $request->gender,
+                'status'       => $request->status,
             ]);
 
             $tenant = $penjual->tenant ?: new Tenants();
             $tenant->penjuals_id = $penjual->id;
             $tenant->tenant_name = $request->tenant_name;
-            $tenant->no_tenant = $request->no_tenant;
+            $tenant->no_tenant   = $request->no_tenant;
 
             if ($request->hasFile('foto_tenant')) {
                 if ($tenant->foto_tenant && Storage::disk('public')->exists($tenant->foto_tenant)) {
@@ -239,25 +265,22 @@ class PenjualController extends Controller
             }
 
             $tenant->save();
+
             DB::commit();
 
-            if ($this->isApiRequest($request)) {
-                return response()->json(['message' => 'Profile penjual berhasil diupdate'], 200);
-            }
-            return redirect()->route('penjual.profile.show')->with('success', 'Profile berhasil diupdate.');
+            return redirect()->route('penjual.profile.edit', [
+                'token' => $request->query('token') ?? $request->input('token')
+            ])->with('success', 'Profile berhasil diupdate.');
         } catch (\Throwable $e) {
             DB::rollBack();
-
-            if ($this->isApiRequest($request)) {
-                return response()->json(['message' => 'Gagal update profile', 'error' => $e->getMessage()], 500);
-            }
-            return back()->withInput()->with('error', 'Gagal update profile: '.$e->getMessage());
+            return back()->withInput()->with('error', 'Gagal update profile: ' . $e->getMessage());
         }
     }
 
     public function profileDestroy(Request $request)
     {
-        $user = $request->user() ?? auth()->user();
+        $user = $this->resolveUser($request);
+
         if (!$user) return $this->unauthorizedResponse($request);
         if (strtolower((string) $user->role) !== 'penjual') return $this->forbiddenRoleResponse($request);
 
@@ -279,15 +302,21 @@ class PenjualController extends Controller
             $penjual->delete();
             DB::commit();
 
-            if ($this->isApiRequest($request)) return response()->json(['message' => 'Profile penjual berhasil dihapus'], 200);
-            return redirect()->route('penjual.homepenjual')->with('success', 'Profile berhasil dihapus.');
+            if ($this->isApiRequest($request)) {
+                return response()->json(['message' => 'Profile penjual berhasil dihapus'], 200);
+            }
+
+            return redirect()->route('penjual.homepenjual', [
+                'token' => $request->query('token') ?? $request->input('token')
+            ])->with('success', 'Profile berhasil dihapus.');
         } catch (\Throwable $e) {
             DB::rollBack();
 
             if ($this->isApiRequest($request)) {
                 return response()->json(['message' => 'Gagal hapus profile', 'error' => $e->getMessage()], 500);
             }
-            return back()->with('error', 'Gagal hapus profile: '.$e->getMessage());
+
+            return back()->with('error', 'Gagal hapus profile: ' . $e->getMessage());
         }
     }
 }

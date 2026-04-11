@@ -37,9 +37,7 @@
                     >
 
                     <h3 class="font-semibold text-sm">{{ $product->nama }}</h3>
-
                     <p class="text-xs text-gray-500">{{ $product->kategoris->nama_kategori ?? '-' }}</p>
-
                     <p class="text-green-600 font-bold mt-2">
                         Rp {{ number_format($product->harga, 0, ',', '.') }}
                     </p>
@@ -84,9 +82,9 @@
 
         <form method="POST" action="{{ route('cart.add') }}">
             @csrf
+            <input type="hidden" name="token" id="modalToken" value="{{ request('token') }}">
             <input type="hidden" name="product_id" id="modalProductId">
             <input type="hidden" name="qty" id="modalQty" value="1">
-            <input type="hidden" name="penjual_id" value="{{ $penjual->id }}">
 
             <div class="mb-4">
                 <p class="font-semibold mb-2">Topping / Variant (Optional)</p>
@@ -114,6 +112,12 @@
 <script>
 let basePrice = 0;
 
+// fallback token dari localStorage
+(function setTokenFallback() {
+    const hidden = document.getElementById('modalToken');
+    if (!hidden.value) hidden.value = localStorage.getItem('token') || '';
+})();
+
 function openMenuModal(id, name, price, image, variants) {
     const modal = document.getElementById('menuModal');
     modal.classList.remove('hidden');
@@ -125,8 +129,8 @@ function openMenuModal(id, name, price, image, variants) {
     document.getElementById('modalName').innerText = name;
     document.getElementById('modalBasePrice').innerText =
         "Rp " + new Intl.NumberFormat('id-ID').format(basePrice);
-    document.getElementById('modalImage').src = image;
 
+    document.getElementById('modalImage').src = image;
     document.getElementById('qty').value = 1;
     document.getElementById('modalQty').value = 1;
 
@@ -138,15 +142,29 @@ function renderVariants(variants) {
     const container = document.getElementById('variantContainer');
     container.innerHTML = "";
 
+    if (!variants.length) {
+        container.innerHTML = `<p class="text-sm text-gray-500">Tidak ada variant.</p>`;
+        return;
+    }
+
+    // MULTI VARIANT => checkbox + name variant_ids[]
     variants.forEach(v => {
-        const variantName  = v.nama_variant ?? 'Variant';
-        const variantPrice = Number(v.harga_variant ?? 0);
+        const variantId    = v.id ?? '';
+        const variantName  = v.nama_variant ?? v.variant_name ?? 'Variant';
+        const variantPrice = Number(v.harga_variant ?? v.variant_price ?? 0);
 
         container.innerHTML += `
             <label class="flex justify-between items-center border-b py-2 gap-2">
-                <span>${variantName}</span>
-                <span class="text-sm text-gray-500">+ Rp ${new Intl.NumberFormat('id-ID').format(variantPrice)}</span>
-                <input type="checkbox" class="variantCheckbox" value="${variantPrice}" onchange="calculateTotal()">
+                <div>
+                    <p>${variantName}</p>
+                    <p class="text-xs text-gray-500">+ Rp ${new Intl.NumberFormat('id-ID').format(variantPrice)}</p>
+                </div>
+                <input type="checkbox"
+                       name="variant_ids[]"
+                       value="${variantId}"
+                       data-price="${variantPrice}"
+                       class="variantCheckbox"
+                       onchange="calculateTotal()">
             </label>
         `;
     });
@@ -169,9 +187,13 @@ function decreaseQty() {
 function calculateTotal() {
     const qty = parseInt(document.getElementById("qty").value || 1);
     let variantTotal = 0;
-    document.querySelectorAll(".variantCheckbox:checked").forEach(v => variantTotal += parseInt(v.value || 0));
+    document.querySelectorAll(".variantCheckbox:checked").forEach(el => {
+        variantTotal += parseInt(el.dataset.price || 0);
+    });
     const total = (basePrice + variantTotal) * qty;
-    document.getElementById("totalPrice").innerText = "Rp " + new Intl.NumberFormat('id-ID').format(total);
+
+    document.getElementById("totalPrice").innerText =
+        "Rp " + new Intl.NumberFormat('id-ID').format(total);
 }
 
 function closeModal() {

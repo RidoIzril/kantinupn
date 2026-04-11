@@ -43,30 +43,16 @@ Route::prefix('customer')->group(function(){
     Route::get('/customer/penjual/{id}', [CusController::class, 'showPenjual'])
         ->name('customer.menu.show');
 
-    Route::get('/customer/profile', [CusController::class, 'profile'])
-        ->name('profile.profilecustomer');
-
-    Route::get('/customer/profile/edit', [CusController::class, 'editProfile'])
-        ->name('profile.edit_profilecust');
-
-    Route::put('/customer/profile', [CusController::class, 'updateProfile'])
-        ->name('customer.profile.update');
+    Route::get('/customer/profile', [CusController::class, 'show'])->name('profile.profilecustomer');
+    Route::put('/customer/profile', [CusController::class, 'update'])->name('profile.profilecustomer.update');
+    Route::put('/customer/profile/password', [CusController::class, 'updatePassword'])->name('profile.profilecustomer.password');
 
     // Cart
-    Route::get('/customer/keranjang', [CartController::class, 'index'])
-        ->name('carts.cartcustomer');
-
-    Route::post('/cart/add', [CartController::class, 'add'])
-        ->name('cart.add');
-
-    Route::patch('/cart/update', [CartController::class, 'update'])
-        ->name('cart.update');
-
-    Route::delete('/cart/remove', [CartController::class, 'remove'])
-        ->name('cart.remove');
-
-     Route::post('/cart/checkout', [TransactionController::class, 'checkout'])
-        ->name('cart.checkout');
+    Route::get('/customer/keranjang', [CartController::class, 'index'])->name('carts.cartcustomer');
+    Route::post('/customer/keranjang/add', [CartController::class, 'add'])->name('cart.add');
+    Route::patch('/customer/keranjang/update', [CartController::class, 'update'])->name('cart.update');
+    Route::delete('/customer/keranjang/remove', [CartController::class, 'remove'])->name('cart.remove');
+    Route::post('/customer/keranjang/checkout', [CartController::class, 'checkout'])->name('cart.checkout');
         
     // Transaksi
     Route::get('/customer/transaksi', [TransactionController::class, 'index'])

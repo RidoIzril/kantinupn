@@ -3,116 +3,287 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+use Laravel\Sanctum\PersonalAccessToken;
+
 use App\Models\Cart;
-use App\Models\Product;
-use Illuminate\Support\Facades\Auth;
+use App\Models\CartItem;
+use App\Models\Produk;
+use App\Models\Customers;
+use App\Models\Order;
+use App\Models\DetailOrder;
+use App\Models\Transaksi;
+use App\Models\Delivery;
+use App\Models\Variant;
 
 class CartController extends Controller
 {
-
-    /*
-    |--------------------------------------------------------------------------
-    | LIST KERANJANG
-    |--------------------------------------------------------------------------
-    */
-
-    public function index()
+    private function resolveUser(Request $request)
     {
-        $customerId = Auth::guard('customer')->id();
+        $user = $request->user() ?? auth()->user();
+        if ($user) return $user;
 
-        $cartItems = Cart::with([
-            'product.category',
-            'variant'
-        ])
-        ->where('customer_id', $customerId)
-        ->get();
+        $plainTextToken = $request->query('token')
+            ?? $request->input('token')
+            ?? $request->bearerToken();
 
-        $paymentMethods = \App\Models\Payment::all();
+        if (!$plainTextToken) return null;
 
-        return view('customer.carts.cartcustomer', [
-            'cartItems' => $cartItems,
-            'paymentMethods' => $paymentMethods
-        ]);
+        $accessToken = PersonalAccessToken::findToken($plainTextToken);
+        return $accessToken?->tokenable;
     }
 
+    private function resolveCustomer(Request $request)
+    {
+        $user = $this->resolveUser($request);
+        if (!$user || $user->role !== 'customer') return null;
 
-    /*
-    |--------------------------------------------------------------------------
-    | TAMBAH KE KERANJANG
-    |--------------------------------------------------------------------------
-    */
+        return Customers::firstOrCreate(
+            ['users_id' => $user->id],
+            ['users_id' => $user->id]
+        );
+    }
+
+    private function resolveCart(Customers $customer): Cart
+    {
+        return Cart::firstOrCreate(['customers_id' => $customer->id]);
+    }
+
+    public function index(Request $request)
+    {
+        $customer = $this->resolveCustomer($request);
+        if (!$customer) return redirect('/login');
+
+        $cart = Cart::where('customers_id', $customer->id)->first();
+
+        $cartItems = collect();
+        if ($cart) {
+            $cartItems = CartItem::with(['produk.kategoris', 'variant'])
+                ->where('carts_id', $cart->id)
+                ->get();
+        }
+
+        return view('customer.carts.cartcustomer', compact('cartItems'));
+    }
 
     public function add(Request $request)
     {
-        $customerId = Auth::guard('customer')->id();
+        $customer = $this->resolveCustomer($request);
+        if (!$customer) return redirect('/login');
 
-        $product = Product::findOrFail($request->product_id);
+        $validated = $request->validate([
+            'product_id'    => 'required|integer|exists:produks,id',
+            'qty'           => 'nullable|integer|min:1',
+            'variant_ids'   => 'nullable|array',
+            'variant_ids.*' => 'integer|exists:variants,id',
+            'token'         => 'nullable|string',
+        ]);
 
-        $variantId = $request->variant_id ?? null;
+        $produk = Produk::findOrFail($validated['product_id']);
+        $qty = $validated['qty'] ?? 1;
+        $variantIds = $validated['variant_ids'] ?? [];
 
-        $qty = $request->qty ?? 1;
+        if (!empty($variantIds)) {
+            $countValid = Variant::whereIn('id', $variantIds)
+                ->where('produks_id', $produk->id)
+                ->count();
 
-        $penjualId = $product->penjual_id;
-
-
-        $cart = Cart::where('customer_id', $customerId)
-            ->where('product_id', $product->product_id)
-            ->where('variant_id', $variantId)
-            ->first();
-
-
-        if ($cart) {
-
-            $cart->quantity += $qty;
-            $cart->save();
-
-        } else {
-
-            Cart::create([
-                'customer_id' => $customerId,
-                'product_id'  => $product->product_id,
-                'variant_id'  => $variantId,
-                'penjual_id'  => $penjualId,
-                'quantity'    => $qty
-            ]);
-
+            if ($countValid !== count($variantIds)) {
+                return back()->withErrors(['variant_ids' => 'Variant tidak sesuai dengan produk.']);
+            }
         }
 
-        return back()->with('success','Menu berhasil ditambahkan ke keranjang');
+        $cart = $this->resolveCart($customer);
+
+        if (empty($variantIds)) {
+            $item = CartItem::where('carts_id', $cart->id)
+                ->where('produks_id', $produk->id)
+                ->whereNull('variants_id')
+                ->first();
+
+            $harga = $produk->harga ?? 0;
+
+            if ($item) {
+                $item->jumlah += $qty;
+                $item->subtotal = $item->jumlah * $item->harga_per_item;
+                $item->save();
+            } else {
+                CartItem::create([
+                    'carts_id'       => $cart->id,
+                    'produks_id'     => $produk->id,
+                    'variants_id'    => null,
+                    'jumlah'         => $qty,
+                    'harga_per_item' => $harga,
+                    'subtotal'       => $harga * $qty,
+                ]);
+            }
+        } else {
+            foreach ($variantIds as $variantId) {
+                $variant = Variant::findOrFail($variantId);
+                $harga = ($produk->harga ?? 0) + ($variant->harga_variant ?? 0);
+
+                $item = CartItem::where('carts_id', $cart->id)
+                    ->where('produks_id', $produk->id)
+                    ->where('variants_id', $variantId)
+                    ->first();
+
+                if ($item) {
+                    $item->jumlah += $qty;
+                    $item->subtotal = $item->jumlah * $item->harga_per_item;
+                    $item->save();
+                } else {
+                    CartItem::create([
+                        'carts_id'       => $cart->id,
+                        'produks_id'     => $produk->id,
+                        'variants_id'    => $variantId,
+                        'jumlah'         => $qty,
+                        'harga_per_item' => $harga,
+                        'subtotal'       => $harga * $qty,
+                    ]);
+                }
+            }
+        }
+
+        return back()->with('success', 'Menu berhasil ditambahkan ke keranjang');
     }
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | UPDATE QTY
-    |--------------------------------------------------------------------------
-    */
 
     public function update(Request $request)
     {
-        $cart = Cart::findOrFail($request->cart_id);
+        $customer = $this->resolveCustomer($request);
+        if (!$customer) return redirect('/login');
 
-        $cart->quantity = max(1, $request->quantity);
+        $validated = $request->validate([
+            'cart_item_id' => 'required|integer|exists:cart_items,id',
+            'quantity'     => 'required|integer|min:1',
+            'token'        => 'nullable|string',
+        ]);
 
-        $cart->save();
+        $cart = Cart::where('customers_id', $customer->id)->firstOrFail();
 
-        return back();
+        $item = CartItem::where('id', $validated['cart_item_id'])
+            ->where('carts_id', $cart->id)
+            ->firstOrFail();
+
+        $item->jumlah = max(1, $validated['quantity']);
+        $item->subtotal = $item->jumlah * $item->harga_per_item;
+        $item->save();
+
+        return back()->with('success', 'Jumlah item berhasil diperbarui');
     }
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | HAPUS ITEM
-    |--------------------------------------------------------------------------
-    */
 
     public function remove(Request $request)
     {
-        $cart = Cart::findOrFail($request->cart_id);
+        $customer = $this->resolveCustomer($request);
+        if (!$customer) return redirect('/login');
 
-        $cart->delete();
+        $validated = $request->validate([
+            'cart_item_id' => 'required|integer|exists:cart_items,id',
+            'token'        => 'nullable|string',
+        ]);
 
-        return back();
+        $cart = Cart::where('customers_id', $customer->id)->firstOrFail();
+
+        $item = CartItem::where('id', $validated['cart_item_id'])
+            ->where('carts_id', $cart->id)
+            ->firstOrFail();
+
+        $item->delete();
+
+        return back()->with('success', 'Item berhasil dihapus');
     }
 
+    public function checkout(Request $request)
+    {
+        $customer = $this->resolveCustomer($request);
+        if (!$customer) return redirect('/login');
+
+        $validated = $request->validate([
+            'order_type'         => 'required|in:Dine In,Takeaway,Delivery',
+            'metode_pembayaran'  => 'required|in:cash,qris',
+            'alamat'             => 'nullable|string',
+            'catatan'            => 'nullable|string',
+            'token'              => 'nullable|string',
+        ]);
+
+        // alamat wajib hanya jika delivery
+        if ($validated['order_type'] === 'Delivery' && empty($validated['alamat'])) {
+            return back()->withInput()->withErrors(['alamat' => 'Alamat wajib diisi untuk Delivery.']);
+        }
+
+        $cart = Cart::where('customers_id', $customer->id)->first();
+        if (!$cart) return back()->withErrors(['cart' => 'Keranjang kosong']);
+
+        $cartItems = CartItem::with(['produk', 'variant'])
+            ->where('carts_id', $cart->id)
+            ->get();
+
+        if ($cartItems->isEmpty()) {
+            return back()->withErrors(['cart' => 'Keranjang kosong']);
+        }
+
+        DB::beginTransaction();
+        try {
+            $grouped = $cartItems->groupBy(fn($item) => optional($item->produk)->tenants_id);
+
+            foreach ($grouped as $tenantId => $items) {
+                if (!$tenantId) {
+                    throw new \Exception('Produk tidak memiliki tenant.');
+                }
+
+                $total = $items->sum('subtotal');
+                $totalProduk = $items->sum('jumlah');
+
+                $order = Order::create([
+                    'customers_id'  => $customer->id,
+                    'order_tanggal' => now(),
+                    'order_type'    => $validated['order_type'],
+                    'total_produk'  => $totalProduk,
+                    'total_harga'   => $total,
+                    'order_status'  => 'pending',
+                ]);
+
+                foreach ($items as $item) {
+                    DetailOrder::create([
+                        'orders_id'   => $order->id,
+                        'produks_id'  => $item->produks_id,
+                        'jumlah'      => $item->jumlah,
+                        'total_harga' => $item->subtotal,
+                    ]);
+                }
+
+                Transaksi::create([
+                    'orders_id'         => $order->id,
+                    'metode_pembayaran' => $validated['metode_pembayaran'],
+                    'status_pembayaran' => 'pending',
+                    'jumlah_bayar'      => $total,
+                    'waktu_bayar'       => null,
+                    'reference_payment' => $validated['metode_pembayaran'] === 'qris'
+                        ? 'QR-' . strtoupper(Str::random(10))
+                        : null,
+                ]);
+
+                // hanya create delivery kalau order_type = Delivery
+                if ($validated['order_type'] === 'Delivery') {
+                    Delivery::create([
+                        'orders_id'       => $order->id,
+                        'alamat'          => $validated['alamat'],
+                        'catatan'         => $validated['catatan'] ?? null,
+                        'status_delivery' => 'pending',
+                    ]);
+                }
+            }
+
+            CartItem::where('carts_id', $cart->id)->delete();
+
+            DB::commit();
+
+            return redirect()->route('transactions.list_transaction', [
+                'token' => $request->query('token') ?? $request->input('token')
+            ])->with('success', 'Checkout berhasil, transaksi dibuat.');
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return back()->withInput()->withErrors(['checkout' => $e->getMessage()]);
+        }
+    }
 }
