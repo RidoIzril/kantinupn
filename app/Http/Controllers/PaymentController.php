@@ -1,78 +1,54 @@
 <?php
 
 namespace App\Http\Controllers;
-use App\Models\Payment;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 
+use Illuminate\Http\Request;
+use Xendit\Xendit;
 
 class PaymentController extends Controller
 {
-    
-    public function index()
+    public function createQr(Request $req)
     {
-        $payments = Payment::all();
-        return view('penjual.payment.list_payment', compact('payments'));
-    }
+        $amount = $req->input('amount', 10000); // ganti sesuai input dari form
+        $orderId = 'ORDER-' . uniqid();
 
-    public function store(Request $request)
-    {
-        // Validasi input
-        $request->validate([
-            'payment_name' => 'required|string|max:255',
-            'payment_image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
-        ]);
+        // Set API Key Xendit
+        Xendit::setApiKey(config('services.xendit.secret_key'));
 
-        // Simpan gambar ke folder storage/public/payments
-        $path = $request->file('payment_image')->store('payments', 'public');
+        // QRIS QR Code charge
+        $params = [
+            'external_id' => $orderId,
+            'amount'      => (int)$amount,
+            'type'        => 'DYNAMIC'
+        ];
 
-        // Simpan data ke database
-        $payment = new Payment();
-        $payment->payment_name = $request->payment_name;
-        $payment->payment_image = $path;
-        $payment->save();
-
-        return redirect()->back()->with('success', 'Metode pembayaran berhasil disimpan.');
-    }
-
-    public function update(Request $request, $id)
-    {
-        $request->validate([
-            'payment_name' => 'required|string|max:255',
-            'payment_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-        ]);
-
-        $payment = Payment::findOrFail($id);
-        $payment->payment_name = $request->payment_name;
-
-        if ($request->hasFile('payment_image')) {
-            // Hapus gambar lama kalau ada
-            if ($payment->payment_image && Storage::exists('public/' . $payment->payment_image)) {
-                Storage::delete('public/' . $payment->payment_image);
-            }
-
-            $path = $request->file('payment_image')->store('payments', 'public');
-            $payment->payment_image = $path;
+        try {
+            $resp = \Xendit\QRCode::create($params);
+            // $resp->qr_string -> data QR
+            // $resp->qr_url (image url)
+            // $resp->id (harus disimpan untuk cek status)
+            return view('payment.qris', [
+                'qr_url'   => $resp['qr_url'],
+                'qr_id'    => $resp['id'],
+                'amount'   => $amount,
+                'order_id' => $orderId
+            ]);
+        } catch (\Exception $e) {
+            return back()->with('error', 'QRIS Error: ' . $e->getMessage());
         }
-
-        $payment->save();
-
-        return redirect()->back()->with('success', 'Data pembayaran berhasil diperbarui.');
     }
 
-    public function destroy($id)
+    // Untuk cek status payment QRIS
+    public function statusQr(Request $req)
     {
-        $payment = Payment::findOrFail($id);
-
-        // Hapus gambar dari storage
-        if ($payment->payment_image && Storage::exists('public/' . $payment->payment_image)) {
-            Storage::delete('public/' . $payment->payment_image);
+        $qr_id = $req->input('qr_id');
+        Xendit::setApiKey(config('services.xendit.secret_key'));
+        try {
+            $resp = \Xendit\QRCode::retrieve($qr_id);
+            // $resp['status'] == 'ACTIVE' / 'INACTIVE' / 'COMPLETED'
+            return response()->json($resp);
+        } catch (\Exception $e) {
+            return response()->json(['error'=>$e->getMessage()], 500);
         }
-
-        // Hapus data dari database
-        $payment->delete();
-
-        return redirect()->back()->with('success', 'Data pembayaran berhasil dihapus.');
     }
-
 }

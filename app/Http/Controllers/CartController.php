@@ -19,14 +19,20 @@ use App\Models\Variant;
 
 class CartController extends Controller
 {
+    /**
+     * WEB FLOW:
+     * 1) auth()->user()
+     * 2) bearer token
+     * 3) token dari input/query (karena form biasa dari blade)
+     */
     private function resolveUser(Request $request)
     {
         $user = $request->user() ?? auth()->user();
         if ($user) return $user;
 
-        $plainTextToken = $request->query('token')
+        $plainTextToken = $request->bearerToken()
             ?? $request->input('token')
-            ?? $request->bearerToken();
+            ?? $request->query('token');
 
         if (!$plainTextToken) return null;
 
@@ -34,7 +40,7 @@ class CartController extends Controller
         return $accessToken?->tokenable;
     }
 
-    private function resolveCustomer(Request $request)
+    private function resolveCustomer(Request $request): ?Customers
     {
         $user = $this->resolveUser($request);
         if (!$user || $user->role !== 'customer') return null;
@@ -45,6 +51,13 @@ class CartController extends Controller
         );
     }
 
+    private function redirectUnauthorized()
+    {
+        return redirect('/login')->withErrors([
+            'auth' => 'Silakan login sebagai customer terlebih dahulu.'
+        ]);
+    }
+
     private function resolveCart(Customers $customer): Cart
     {
         return Cart::firstOrCreate(['customers_id' => $customer->id]);
@@ -53,7 +66,7 @@ class CartController extends Controller
     public function index(Request $request)
     {
         $customer = $this->resolveCustomer($request);
-        if (!$customer) return redirect('/login');
+        if (!$customer) return $this->redirectUnauthorized();
 
         $cart = Cart::where('customers_id', $customer->id)->first();
 
@@ -70,7 +83,7 @@ class CartController extends Controller
     public function add(Request $request)
     {
         $customer = $this->resolveCustomer($request);
-        if (!$customer) return redirect('/login');
+        if (!$customer) return $this->redirectUnauthorized();
 
         $validated = $request->validate([
             'product_id'    => 'required|integer|exists:produks,id',
@@ -151,7 +164,7 @@ class CartController extends Controller
     public function update(Request $request)
     {
         $customer = $this->resolveCustomer($request);
-        if (!$customer) return redirect('/login');
+        if (!$customer) return $this->redirectUnauthorized();
 
         $validated = $request->validate([
             'cart_item_id' => 'required|integer|exists:cart_items,id',
@@ -175,7 +188,7 @@ class CartController extends Controller
     public function remove(Request $request)
     {
         $customer = $this->resolveCustomer($request);
-        if (!$customer) return redirect('/login');
+        if (!$customer) return $this->redirectUnauthorized();
 
         $validated = $request->validate([
             'cart_item_id' => 'required|integer|exists:cart_items,id',
@@ -196,7 +209,7 @@ class CartController extends Controller
     public function checkout(Request $request)
     {
         $customer = $this->resolveCustomer($request);
-        if (!$customer) return redirect('/login');
+        if (!$customer) return $this->redirectUnauthorized();
 
         $validated = $request->validate([
             'order_type'         => 'required|in:Dine In,Takeaway,Delivery',
@@ -206,7 +219,6 @@ class CartController extends Controller
             'token'              => 'nullable|string',
         ]);
 
-        // alamat wajib hanya jika delivery
         if ($validated['order_type'] === 'Delivery' && empty($validated['alamat'])) {
             return back()->withInput()->withErrors(['alamat' => 'Alamat wajib diisi untuk Delivery.']);
         }
@@ -227,9 +239,7 @@ class CartController extends Controller
             $grouped = $cartItems->groupBy(fn($item) => optional($item->produk)->tenants_id);
 
             foreach ($grouped as $tenantId => $items) {
-                if (!$tenantId) {
-                    throw new \Exception('Produk tidak memiliki tenant.');
-                }
+                if (!$tenantId) throw new \Exception('Produk tidak memiliki tenant.');
 
                 $total = $items->sum('subtotal');
                 $totalProduk = $items->sum('jumlah');
@@ -263,7 +273,6 @@ class CartController extends Controller
                         : null,
                 ]);
 
-                // hanya create delivery kalau order_type = Delivery
                 if ($validated['order_type'] === 'Delivery') {
                     Delivery::create([
                         'orders_id'       => $order->id,
@@ -279,7 +288,7 @@ class CartController extends Controller
             DB::commit();
 
             return redirect()->route('transactions.list_transaction', [
-                'token' => $request->query('token') ?? $request->input('token')
+                'token' => $request->input('token') ?? $request->query('token'),
             ])->with('success', 'Checkout berhasil, transaksi dibuat.');
         } catch (\Throwable $e) {
             DB::rollBack();

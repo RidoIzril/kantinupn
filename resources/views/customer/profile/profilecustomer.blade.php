@@ -2,7 +2,6 @@
 
 @section('content')
 <div class="flex min-h-screen bg-slate-100">
-    @include('customer.sidebarcus')
 
     <div class="flex-1 p-6 md:p-10">
         <div class="max-w-3xl mx-auto bg-white rounded-2xl shadow-sm border border-slate-200">
@@ -11,7 +10,6 @@
                 <p class="text-sm text-slate-500 mt-1">Lengkapi data profil kamu</p>
             </div>
 
-            {{-- FORM UPDATE BIODATA --}}
             <form method="POST"
                   action="{{ route('profile.profilecustomer.update', ['token' => request('token')]) }}"
                   class="px-8 py-6 space-y-5">
@@ -25,7 +23,7 @@
                     </div>
                 @endif
 
-                @if($errors->any() && !session('success_password'))
+                @if($errors->any())
                     <div class="bg-red-100 text-red-700 px-4 py-3 rounded-lg text-sm">
                         <ul class="list-disc ml-5">
                             @foreach($errors->all() as $e)
@@ -101,60 +99,6 @@
                     </button>
                 </div>
             </form>
-
-            {{-- FORM UPDATE PASSWORD --}}
-            <form method="POST"
-                  action="{{ route('profile.profilecustomer.password', ['token' => request('token')]) }}"
-                  class="px-8 pb-8 space-y-4">
-                @csrf
-                @method('PUT')
-                <input type="hidden" name="token" value="{{ request('token') }}">
-
-                <div class="border-t border-slate-200 pt-6">
-                    <h2 class="text-lg font-bold text-slate-800 mb-1">Ganti Password</h2>
-                    <p class="text-sm text-slate-500 mb-4">Isi password lama dan password baru</p>
-
-                    @if(session('success_password'))
-                        <div class="bg-green-100 text-green-700 px-4 py-3 rounded-lg text-sm mb-3">
-                            {{ session('success_password') }}
-                        </div>
-                    @endif
-
-                    <div class="space-y-4">
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1">Password Lama</label>
-                            <input type="password" name="current_password"
-                                   class="w-full h-12 px-4 rounded-xl border border-slate-300 bg-slate-50">
-                            @error('current_password')
-                                <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1">Password Baru</label>
-                            <input type="password" name="new_password"
-                                   class="w-full h-12 px-4 rounded-xl border border-slate-300 bg-slate-50">
-                            @error('new_password')
-                                <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1">Konfirmasi Password Baru</label>
-                            <input type="password" name="new_password_confirmation"
-                                   class="w-full h-12 px-4 rounded-xl border border-slate-300 bg-slate-50">
-                        </div>
-                    </div>
-
-                    <div class="pt-4 flex justify-end">
-                        <button type="submit"
-                                class="px-6 py-2.5 rounded-xl bg-slate-800 text-white hover:bg-slate-900 transition font-semibold text-sm">
-                            Update Password
-                        </button>
-                    </div>
-                </div>
-            </form>
-
         </div>
     </div>
 </div>

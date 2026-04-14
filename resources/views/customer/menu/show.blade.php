@@ -2,12 +2,17 @@
 
 @section('content')
 <div class="flex min-h-screen bg-gray-100">
-    @include('customer.sidebarcus')
-
+    {{-- sidebar sudah dari layouts.app, jangan include lagi di sini --}}
     <div class="flex-1 p-6">
         @if(session('success'))
             <div class="bg-green-100 text-green-700 p-3 rounded mb-4">
                 {{ session('success') }}
+            </div>
+        @endif
+
+        @if($errors->any())
+            <div class="bg-red-100 text-red-700 p-3 rounded mb-4">
+                {{ $errors->first() }}
             </div>
         @endif
 
@@ -42,7 +47,9 @@
                         Rp {{ number_format($product->harga, 0, ',', '.') }}
                     </p>
 
+                    {{-- Guest boleh buka modal --}}
                     <button
+                        type="button"
                         onclick='openMenuModal(
                             {{ $product->id }},
                             @json($product->nama),
@@ -80,8 +87,9 @@
             </div>
         </div>
 
-        <form method="POST" action="{{ route('cart.add') }}">
+        <form id="addToCartForm" method="POST" action="{{ route('cart.add') }}">
             @csrf
+            {{-- dipertahankan untuk kompatibilitas backend lama --}}
             <input type="hidden" name="token" id="modalToken" value="{{ request('token') }}">
             <input type="hidden" name="product_id" id="modalProductId">
             <input type="hidden" name="qty" id="modalQty" value="1">
@@ -102,6 +110,7 @@
                 <p id="totalPrice" class="text-xl font-bold text-green-600">Rp 0</p>
             </div>
 
+            {{-- Redirect login hanya saat klik tombol merah (submit form) --}}
             <button type="submit" class="w-full bg-red-500 hover:bg-red-600 text-white py-3 rounded-lg">
                 Masukkan ke Keranjang
             </button>
@@ -112,10 +121,10 @@
 <script>
 let basePrice = 0;
 
-// fallback token dari localStorage
+// fallback token dari localStorage (untuk user customer yang login via localStorage)
 (function setTokenFallback() {
     const hidden = document.getElementById('modalToken');
-    if (!hidden.value) hidden.value = localStorage.getItem('token') || '';
+    if (hidden && !hidden.value) hidden.value = localStorage.getItem('token') || '';
 })();
 
 function openMenuModal(id, name, price, image, variants) {
@@ -147,7 +156,6 @@ function renderVariants(variants) {
         return;
     }
 
-    // MULTI VARIANT => checkbox + name variant_ids[]
     variants.forEach(v => {
         const variantId    = v.id ?? '';
         const variantName  = v.nama_variant ?? v.variant_name ?? 'Variant';
@@ -201,5 +209,27 @@ function closeModal() {
     modal.classList.remove('flex');
     modal.classList.add('hidden');
 }
+
+// Guard submit: redirect login HANYA saat klik "Masukkan ke Keranjang"
+(function guardAddToCartSubmit() {
+    const form = document.getElementById('addToCartForm');
+    if (!form) return;
+
+    form.addEventListener('submit', function (e) {
+        const token = localStorage.getItem('token');
+        const role  = localStorage.getItem('role');
+        const isCustomer = !!token && role === 'customer';
+
+        if (!isCustomer) {
+            e.preventDefault();
+            window.location.href = '/login';
+            return;
+        }
+
+        // pastikan hidden token terisi untuk flow backend lama
+        const hidden = document.getElementById('modalToken');
+        if (hidden && !hidden.value) hidden.value = token;
+    });
+})();
 </script>
 @endsection

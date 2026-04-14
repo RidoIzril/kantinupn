@@ -2,7 +2,6 @@
 
 @section('content')
 <div class="flex min-h-screen bg-slate-100">
-    @include('customer.sidebarcus')
 
     <div class="flex-1 p-4 md:p-6 lg:p-8">
         <div class="max-w-6xl mx-auto">

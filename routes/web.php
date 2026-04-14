@@ -17,9 +17,11 @@ use App\Http\Controllers\SuperadminController;
 |--------------------------------------------------------------------------
 */
 
-Route::get('/', function () {
-    return redirect('/login');
-});
+// LANDING PAGE (guest) -> langsung dashboard customer
+Route::get('/', [CusController::class, 'index'])->name('welcome');
+
+// optional: kalau masih mau simpan halaman welcome blade default
+Route::view('/welcome', 'welcome')->name('welcome.page');
 
 Route::get('/login', function () {
     return view('auth.login');
@@ -28,7 +30,6 @@ Route::get('/login', function () {
 Route::get('/register', function () {
     return view('auth.regis');
 })->name('register');
-
 
 /*
 |--------------------------------------------------------------------------
