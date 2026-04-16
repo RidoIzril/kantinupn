@@ -17,7 +17,9 @@ return new class extends Migration
                 ->cascadeOnDelete();
 
             $table->string('tenant_name');
-            $table->string('no_tenant')->nullable();
+            $table->string('desk_tenant')->nullable();
+            $table->string('no_tenant');
+            $table->enum('kantin',['1','2']);
             $table->string('foto_tenant')->nullable();
 
             $table->timestamps();

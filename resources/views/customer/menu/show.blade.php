@@ -23,11 +23,30 @@
                 alt="Foto Tenant"
             >
             <div>
-                <h1 class="text-3xl font-bold text-gray-900">
-                    {{ $penjual->tenant?->tenant_name ?? 'Tenant' }}
-                </h1>
-                <p class="text-sm text-gray-500">{{ $penjual->nama_lengkap ?? '-' }}</p>
-            </div>
+    <h1 class="text-3xl font-bold text-gray-900">
+        {{ $penjual->tenant?->tenant_name ?? 'Tenant' }}
+    </h1>
+    
+    {{-- NO TENANT & KANTIN --}}
+    <div class="mt-1">
+        <span class="inline-block text-xs bg-gray-100 rounded px-2 py-0.5 mr-2">
+            No Tenant: {{ $penjual->tenant?->no_tenant ?? '-' }}
+        </span>
+        <span class="inline-block text-xs bg-gray-100 rounded px-2 py-0.5">
+            Kantin: 
+            {{
+                $penjual->tenant?->kantin == '1' ? 'Kantin 1' : (
+                    $penjual->tenant?->kantin == '2' ? 'Kantin 2' : '-'
+                )
+            }}
+        </span>
+    </div>
+
+    {{-- DESKRIPSI TENANT --}}
+    <div class="mt-2 text-xs text-gray-700">
+        {{ $penjual->tenant?->desk_tenant ? $penjual->tenant->desk_tenant : '-' }}
+    </div>
+</div>
         </div>
 
         <h2 class="text-lg font-semibold mb-4">Menu</h2>

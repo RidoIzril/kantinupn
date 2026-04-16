@@ -219,6 +219,8 @@ class PenjualController extends Controller
             'gender'        => 'nullable|in:Laki-Laki,Perempuan',
             'status'        => 'required|string|max:20',
             'tenant_name'   => 'required|string|max:255',
+            'desk_tenant'   => 'nullable|string|max:255',
+            'kantin'        => 'required|in:1,2',
             'no_tenant'     => 'nullable|string|max:50',
             'foto_tenant'   => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
             'current_password' => 'nullable|string',
@@ -255,6 +257,8 @@ class PenjualController extends Controller
             $tenant = $penjual->tenant ?: new Tenants();
             $tenant->penjuals_id = $penjual->id;
             $tenant->tenant_name = $request->tenant_name;
+            $tenant->desk_tenant = $request->desk_tenant ?? null;
+            $tenant->kantin = $request->kantin;
             $tenant->no_tenant   = $request->no_tenant;
 
             if ($request->hasFile('foto_tenant')) {

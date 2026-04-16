@@ -41,7 +41,7 @@
            class="menu-link group flex items-center gap-3 px-4 py-2 rounded-lg transition-all duration-200
            {{ Request::is('/') || Request::is('customer/home*') ? 'bg-green-700 text-white shadow-md translate-x-1' : 'text-green-200 hover:bg-green-700 hover:text-white hover:translate-x-1' }}">
             <span class="text-lg">🛍️</span>
-            <span class="text-sm font-medium">Produk</span>
+            <span class="text-sm font-medium">Dashboard</span>
         </a>
 
         <a id="menu-keranjang" href="{{ route('carts.cartcustomer') }}"
@@ -181,7 +181,7 @@ function logout() {
         localStorage.removeItem('token');
         localStorage.removeItem('role');
         localStorage.removeItem('token_issued_at');
-        window.location.href = '/login';
+        window.location.href = '/';
     });
 }
 </script>

@@ -49,6 +49,8 @@ class SuperadminController extends Controller
                 'u.username',
                 't.tenant_name',
                 't.no_tenant',
+                't.desk_tenant',
+                't.kantin',
                 't.foto_tenant',
             ])
             ->orderByDesc('p.id')
@@ -71,7 +73,9 @@ class SuperadminController extends Controller
             'kontak'       => 'required|string|max:30',
             'gender'       => 'required|in:Laki-Laki,Perempuan',
             'status'       => 'required|in:aktif,nonaktif',
-            'tenant_name'  => 'nullable|string|max:255',
+            'tenant_name'  => 'required|string|max:255',
+            'desk_tenant'  => 'nullable|string|max:255',
+            'kantin'       => 'required|in:1,2',
             'no_tenant'    => 'nullable|string|max:100',
             'foto_tenant'  => 'nullable|image|max:2048',
         ]);
@@ -97,14 +101,14 @@ class SuperadminController extends Controller
                 $fotoPath = $request->file('foto_tenant')->store('foto_tenant', 'public');
             }
 
-            if (!empty($data['tenant_name']) || !empty($data['no_tenant']) || $fotoPath) {
-                Tenants::create([
-                    'penjuals_id' => $penjual->id,
-                    'tenant_name' => $data['tenant_name'] ?? null,
-                    'no_tenant'   => $data['no_tenant'] ?? null,
-                    'foto_tenant' => $fotoPath,
-                ]);
-            }
+            Tenants::create([
+                'penjuals_id' => $penjual->id,
+                'tenant_name' => $data['tenant_name'],
+                'desk_tenant' => $data['desk_tenant'] ?? null,
+                'kantin'      => $data['kantin'],
+                'no_tenant'   => $data['no_tenant'] ?? null,
+                'foto_tenant' => $fotoPath,
+            ]);
 
             DB::commit();
 
@@ -129,6 +133,8 @@ class SuperadminController extends Controller
                 'u.username',
                 't.id as tenant_id',
                 't.tenant_name',
+                't.desk_tenant',
+                't.kantin',
                 't.no_tenant',
                 't.foto_tenant'
             )
@@ -150,7 +156,9 @@ class SuperadminController extends Controller
             'kontak'       => 'required|string|max:30',
             'gender'       => 'required|in:Laki-Laki,Perempuan',
             'status'       => 'required|in:aktif,nonaktif',
-            'tenant_name'  => 'nullable|string|max:255',
+            'tenant_name'  => 'required|string|max:255',
+            'desk_tenant'  => 'nullable|string|max:255',
+            'kantin'       => 'required|in:1,2',
             'no_tenant'    => 'nullable|string|max:100',
             'foto_tenant'  => 'nullable|image|max:2048',
         ]);
@@ -179,7 +187,9 @@ class SuperadminController extends Controller
             $tenant = Tenants::where('penjuals_id', $penjual->id)->first();
 
             $tenantPayload = [
-                'tenant_name' => $data['tenant_name'] ?? null,
+                'tenant_name' => $data['tenant_name'],
+                'desk_tenant' => $data['desk_tenant'] ?? null,
+                'kantin'      => $data['kantin'],
                 'no_tenant'   => $data['no_tenant'] ?? null,
             ];
 
@@ -260,6 +270,8 @@ class SuperadminController extends Controller
                 'p.gender',
                 'p.status',
                 't.tenant_name',
+                't.desk_tenant',
+                't.kantin',
                 't.no_tenant',
                 't.foto_tenant'
             )

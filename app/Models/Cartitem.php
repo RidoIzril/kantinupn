@@ -10,7 +10,8 @@ class CartItem extends Model
 
     protected $fillable = [
         'carts_id','produks_id','variants_id',
-        'jumlah','harga_per_item','subtotal'
+        'jumlah','harga_per_item','subtotal',
+        'catatan_menu','nomor_meja'
     ];
 
     public function cart()

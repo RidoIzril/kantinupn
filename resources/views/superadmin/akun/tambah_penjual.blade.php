@@ -69,6 +69,19 @@
            class="w-full border p-2 rounded"
            placeholder="Nama Tenant">
 
+    {{-- Deskripsi Tenant --}}       
+    <input name="desk_tenant"
+            value="{{ old('desk_tenant', $penjual->tenant->desk_tenant ?? '') }}"
+            class="w-full border p-2 rounded"
+            placeholder="Deskripsi Tenant" >
+
+    {{-- KANTIN --}}
+    <select name="kantin" class="w-full border p-2 rounded" required>
+        <option value="">-- Pilih Kantin --</option>
+        <option value="1" {{ old('kantin', $penjual->kantin ?? $penjual->tenant->kantin ?? '') == '1' ? 'selected' : '' }}>1</option>
+        <option value="2" {{ old('kantin', $penjual->kantin ?? $penjual->tenant->kantin ?? '') == '2' ? 'selected' : '' }}>2</option>
+    </select>
+
     {{-- NO TENANT --}}
     <input name="no_tenant"
            value="{{ old('no_tenant') }}"

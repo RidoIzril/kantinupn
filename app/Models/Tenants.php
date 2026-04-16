@@ -10,7 +10,7 @@ class Tenants extends Model
     protected $primaryKey = 'id';
 
     protected $fillable = [
-        'penjuals_id', 'tenant_name', 'no_tenant', 'foto_tenant'
+        'penjuals_id', 'tenant_name', 'no_tenant', 'foto_tenant','desk_tenant','kantin'
     ];
 
     public function penjual()
