@@ -65,6 +65,13 @@
             <span class="text-sm font-medium">Kategori</span>
         </a>
 
+        <a href="{{ route('superadmin.laporan.index') }}"
+        class="menu-link group flex items-center gap-3 px-4 py-2 rounded-lg transition-all duration-200 ease-out
+                text-green-200 hover:bg-green-700 hover:text-white hover:translate-x-1 active:scale-[0.98]">
+            <i class="bi bi-bar-chart-line text-lg transition-transform duration-200 group-hover:rotate-3"></i>
+            <span class="text-sm font-medium">Laporan Penjualan</span>
+        </a>
+
         {{-- Akun Penjual --}}
         <a href="{{ route('superadmin.penjual.index') }}"
            class="menu-link group flex items-center gap-3 px-4 py-2 rounded-lg transition-all duration-200 ease-out

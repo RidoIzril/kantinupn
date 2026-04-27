@@ -15,9 +15,11 @@ return new class extends Migration
                 ->constrained('customers');
 
             $table->dateTime('order_tanggal');
-
+            
             $table->enum('order_type',['Dine In','Takeaway','Delivery']);
 
+            $table->string('nomor_meja')->nullable();
+            
             $table->integer('total_produk');
             $table->decimal('total_harga',12,2);
 
@@ -26,6 +28,7 @@ return new class extends Migration
             ])->default('pending');
 
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

@@ -21,39 +21,7 @@ class UserSeeder extends Seeder
                 'updated_at' => now()
             ],
 
-            // ================= PENJUAL =================
-            [
-                'username' => 'penjual1',
-                'password' => Hash::make('123456'),
-                'role' => 'penjual',
-                'created_at' => now(),
-                'updated_at' => now()
-            ],
-
-            [
-                'username' => 'penjual2',
-                'password' => Hash::make('123456'),
-                'role' => 'penjual',
-                'created_at' => now(),
-                'updated_at' => now()
-            ],
-
-            // ================= CUSTOMER =================
-            [
-                'username' => 'customer1',
-                'password' => Hash::make('123456'),
-                'role' => 'customer',
-                'created_at' => now(),
-                'updated_at' => now()
-            ],
-
-            [
-                'username' => 'customer2',
-                'password' => Hash::make('123456'),
-                'role' => 'customer',
-                'created_at' => now(),
-                'updated_at' => now()
-            ],
+            
 
         ]);
     }

@@ -2,53 +2,62 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Order;
+use App\Models\Transaksi;
 use Illuminate\Http\Request;
-use Xendit\Xendit;
+use Xendit\Invoice;
 
 class PaymentController extends Controller
 {
-    public function createQr(Request $req)
+    public function qris(Request $request)
     {
-        $amount = $req->input('amount', 10000); // ganti sesuai input dari form
-        $orderId = 'ORDER-' . uniqid();
+        $order_id = $request->get('order_id');
 
-        // Set API Key Xendit
-        Xendit::setApiKey(config('services.xendit.secret_key'));
+        $order = Order::findOrFail($order_id);
 
-        // QRIS QR Code charge
-        $params = [
-            'external_id' => $orderId,
-            'amount'      => (int)$amount,
-            'type'        => 'DYNAMIC'
-        ];
+        $transaksi = Transaksi::where('orders_id', $order->id)
+            ->where('metode_pembayaran', 'qris')
+            ->firstOrFail();
 
-        try {
-            $resp = \Xendit\QRCode::create($params);
-            // $resp->qr_string -> data QR
-            // $resp->qr_url (image url)
-            // $resp->id (harus disimpan untuk cek status)
-            return view('payment.qris', [
-                'qr_url'   => $resp['qr_url'],
-                'qr_id'    => $resp['id'],
-                'amount'   => $amount,
-                'order_id' => $orderId
-            ]);
-        } catch (\Exception $e) {
-            return back()->with('error', 'QRIS Error: ' . $e->getMessage());
+        if (!$transaksi->reference_payment || !$transaksi->qris_url) {
+
+            $customer = $order->customer;
+
+            $params = [
+                'external_id'    => 'order-' . $order->id . '-' . time(),
+                'payer_email'    => $customer->email ?? '',
+                'description'    => "Pembayaran pesanan #{$order->id}",
+                'amount'         => intval($order->total_harga),
+                'payment_methods'=> ['QRIS'],
+            ];
+
+            $invoice = Invoice::create($params);
+
+            // ✅ INI PENTING
+            $transaksi->reference_payment = $invoice['id'] ?? null;
+            $transaksi->qris_url = $invoice['invoice_url'] ?? null;
+            $transaksi->save();
         }
+
+        return view('customer.payment.qris', [
+            'order_id'    => $order->id,
+            'qris_url'    => $transaksi->qris_url,
+            'total_harga' => $order->total_harga,
+        ]);
     }
 
-    // Untuk cek status payment QRIS
-    public function statusQr(Request $req)
+    public function checkQrisStatus(Request $request)
     {
-        $qr_id = $req->input('qr_id');
-        Xendit::setApiKey(config('services.xendit.secret_key'));
-        try {
-            $resp = \Xendit\QRCode::retrieve($qr_id);
-            // $resp['status'] == 'ACTIVE' / 'INACTIVE' / 'COMPLETED'
-            return response()->json($resp);
-        } catch (\Exception $e) {
-            return response()->json(['error'=>$e->getMessage()], 500);
-        }
+        $order_id = $request->get('order_id');
+
+        $order = Order::findOrFail($order_id);
+
+        $transaksi = Transaksi::where('orders_id', $order->id)
+            ->where('metode_pembayaran', 'qris')
+            ->first();
+
+        return response()->json([
+            'status' => $transaksi->status_pembayaran ?? 'pending'
+        ]);
     }
 }

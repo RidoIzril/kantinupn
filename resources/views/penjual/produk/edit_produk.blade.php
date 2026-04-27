@@ -71,6 +71,10 @@
                                            placeholder="Nama variant" class="flex-1 h-11 px-3 border rounded">
                                     <input type="number" name="harga_variant[]" value="{{ old('harga_variant.'.$i) }}"
                                            placeholder="Harga tambahan" class="w-40 h-11 px-3 border rounded">
+                                    <select name="status_variant[]" class="h-11 border rounded px-2">
+                                        <option value="1" {{ $variant->status_variant ? 'selected' : '' }}>Aktif</option>
+                                        <option value="0" {{ !$variant->status_variant ? 'selected' : '' }}>Nonaktif</option>
+                                    </select>
                                     <button type="button" onclick="removeVariant(this)" class="bg-red-500 text-white px-3 rounded">X</button>
                                 </div>
                             @endforeach
@@ -82,6 +86,10 @@
                                            placeholder="Nama variant" class="flex-1 h-11 px-3 border rounded">
                                     <input type="number" name="harga_variant[]" value="{{ $variant->harga_variant }}"
                                            placeholder="Harga tambahan" class="w-40 h-11 px-3 border rounded">
+                                    <select name="status_variant[]" class="h-11 border rounded px-2">
+                                        <option value="1" {{ $variant->status_variant ? 'selected' : '' }}>Aktif</option>
+                                        <option value="0" {{ !$variant->status_variant ? 'selected' : '' }}>Nonaktif</option>
+                                    </select>
                                     <button type="button" onclick="removeVariant(this)" class="bg-red-500 text-white px-3 rounded">X</button>
                                 </div>
                             @endforeach

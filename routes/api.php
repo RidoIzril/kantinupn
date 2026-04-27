@@ -5,26 +5,32 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthApiController;
 use App\Http\Controllers\PenjualController;
 use App\Http\Controllers\SuperadminController;
+use App\Http\Controllers\XenditWebhookController;
+use App\Http\Controllers\PaymentController;
+    
+    Route::post('/login', [AuthApiController::class, 'login']);
+    Route::post('/register', [AuthApiController::class, 'register']);
+    Route::post('/xendit/webhook', [XenditWebhookController::class, 'handle']);
 
-Route::post('/login', [AuthApiController::class, 'login']);
-Route::post('/register', [AuthApiController::class, 'register']);
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::post('/logout', [AuthApiController::class, 'logout']);
 
-Route::middleware('auth:sanctum')->group(function () {
-    Route::post('/logout', [AuthApiController::class, 'logout']);
-
-    Route::get('/me', function (Request $request) {
-        return response()->json([
-            'success' => true,
-            'user' => $request->user()
-        ]);
-    });
+        Route::get('/me', function (Request $request) {
+            return response()->json([
+                'success' => true,
+                'user' => $request->user()
+            ]);
+        });
 
     Route::get('/penjual/dashboard', [PenjualController::class, 'index']);
     Route::get('/penjual/profile', [PenjualController::class, 'profile']);
     Route::put('/penjual/profile/update', [PenjualController::class, 'profileUpdate']);
+    Route::get('/penjual/notifications', [PenjualController::class, 'notifications']);
 
     Route::prefix('superadmin')->group(function () {
     Route::get('/penjual', [SuperadminController::class, 'apiIndexPenjual']);
     Route::post('/penjual', [SuperadminController::class, 'apiStorePenjual']);
     });
+
+    
 });

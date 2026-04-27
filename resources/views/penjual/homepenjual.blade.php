@@ -11,7 +11,6 @@
             <span id="namaPenjual" class="font-semibold">...</span>
         </p>
     </div>
-
     <img src="{{ asset('template/dist/assets/compiled/jpg/1.jpg') }}"
          class="w-10 h-10 rounded-full object-cover">
 </div>
@@ -26,18 +25,112 @@
         <p id="totalPendapatan" class="text-xl font-bold">Rp 0</p>
     </div>
     <div class="bg-white rounded-xl shadow p-5">
-        <p class="text-sm text-gray-500">Transaksi Pending</p>
-        <p id="transaksiPending" class="text-2xl font-bold">0</p>
+        <p class="text-sm text-gray-500">Order Pending</p>
+        <p id="orderPending" class="text-2xl font-bold">0</p>
     </div>
     <div class="bg-white rounded-xl shadow p-5">
         <p class="text-sm text-gray-500">Transaksi Selesai</p>
         <p id="transaksiSelesai" class="text-2xl font-bold">0</p>
     </div>
 </div>
+
+{{-- ALERT NOTIF --}}
+<div id="notifStokContainer"></div>
+
+{{-- ALERT PESANAN MASUK BARU --}}
+<div id="alertPesananMasuk" class="hidden mb-5 p-4 rounded-lg bg-green-100 border border-green-300 text-green-900 font-semibold shadow"></div>
+
 @endsection
 
 @push('scripts')
 <script>
+let lastOrderPending = null;
+
+async function fetchDashboardData(headers, isFirst = false) {
+    const API_DASH = "{{ url('/api/penjual/dashboard') }}";
+    const dashRes = await fetch(API_DASH, { method: 'GET', headers });
+    const raw = await dashRes.text();
+
+    let dashJson = {};
+    try { dashJson = JSON.parse(raw); } catch (_) {}
+
+    if (!dashRes.ok) return;
+
+    const s = dashJson.data?.statistik || {};
+    const p = dashJson.data?.penjual || {};
+
+    document.getElementById('namaPenjual').innerText = p.username ?? '-';
+    document.getElementById('jumlahProduk').innerText = s.jumlah_produk ?? 0;
+    document.getElementById('orderPending').innerText = s.order_pending ?? 0;
+    document.getElementById('transaksiSelesai').innerText = s.transaksi_selesai ?? 0;
+    document.getElementById('totalPendapatan').innerText =
+        'Rp ' + Number(s.total_pendapatan ?? 0).toLocaleString('id-ID');
+
+    const pending = Number(s.order_pending ?? 0);
+
+    if (lastOrderPending !== null && pending > lastOrderPending) {
+        showAlertPesananMasuk(pending - lastOrderPending);
+    }
+    lastOrderPending = pending;
+
+    if(isFirst) lastOrderPending = pending;
+}
+
+function showAlertPesananMasuk(jumlahBaru) {
+    const el = document.getElementById('alertPesananMasuk');
+    el.innerText = jumlahBaru + ' pesanan baru masuk!';
+    el.classList.remove('hidden');
+    el.classList.add('animate-pulse');
+
+    setTimeout(() => {
+        el.classList.add('hidden');
+        el.classList.remove('animate-pulse');
+    }, 5000);
+}
+
+{{-- FETCH NOTIFICATIONS --}}
+async function fetchNotifications(headers) {
+    const res = await fetch("{{ url('/api/penjual/notifications') }}", {
+        method: 'GET',
+        headers
+    });
+
+    if (!res.ok) return;
+
+    const data = await res.json();
+    const container = document.getElementById('notifStokContainer');
+
+    container.innerHTML = '';
+
+    data.notifications.forEach(notif => {
+
+        if (notif.data.type === 'order') {
+            container.innerHTML += `
+                <div class="mb-3 p-3 rounded-lg bg-green-100 border border-green-300 text-green-900 shadow">
+                    🛒 ${notif.data.message}
+                    <br>
+                    <span class="text-sm">
+                        Order ID: <b>#${notif.data.order_id}</b> 
+                        (Rp ${Number(notif.data.total || 0).toLocaleString('id-ID')})
+                    </span>
+                </div>
+            `;
+        } else {
+            container.innerHTML += `
+                <div class="mb-3 p-3 rounded-lg bg-yellow-100 border border-yellow-300 text-yellow-900 shadow">
+                    ⚠️ ${notif.data.message}
+                    <br>
+                    <span class="text-sm">
+                        Produk: <b>${notif.data.nama_produk ?? '-'}</b> 
+                        (Stok: ${notif.data.stok ?? 0})
+                    </span>
+                </div>
+            `;
+        }
+
+    });
+}
+
 document.addEventListener('DOMContentLoaded', async function () {
     const token = localStorage.getItem('token');
     const role  = localStorage.getItem('role');
@@ -53,7 +146,6 @@ document.addEventListener('DOMContentLoaded', async function () {
     };
 
     const API_ME   = "{{ url('/api/me') }}";
-    const API_DASH = "{{ url('/api/penjual/dashboard') }}";
 
     try {
         const meRes = await fetch(API_ME, { method: 'GET', headers });
@@ -64,29 +156,16 @@ document.addEventListener('DOMContentLoaded', async function () {
             return;
         }
 
-        const meJson = await meRes.json();
+        // LOAD AWAL
+        await fetchDashboardData(headers, true);
+        await fetchNotifications(headers);
 
-        console.log('HIT DASH URL =>', API_DASH);
-        const dashRes = await fetch(API_DASH, { method: 'GET', headers });
-        const raw = await dashRes.text();
+        // POLLING
+        setInterval(() => {
+            fetchDashboardData(headers, false);
+            fetchNotifications(headers);
+        }, 10000);
 
-        let dashJson = {};
-        try { dashJson = JSON.parse(raw); } catch (_) {}
-
-        if (!dashRes.ok) {
-            console.error('Dashboard API ERROR', { url: API_DASH, status: dashRes.status, body: raw });
-            return;
-        }
-
-        const s = dashJson.data?.statistik || {};
-        const p = dashJson.data?.penjual || {};
-
-        document.getElementById('namaPenjual').innerText = p.username ?? meJson.user?.username ?? '-';
-        document.getElementById('jumlahProduk').innerText = s.jumlah_produk ?? 0;
-        document.getElementById('transaksiPending').innerText = s.transaksi_pending ?? 0;
-        document.getElementById('transaksiSelesai').innerText = s.transaksi_selesai ?? 0;
-        document.getElementById('totalPendapatan').innerText =
-            'Rp ' + Number(s.total_pendapatan ?? 0).toLocaleString('id-ID');
     } catch (err) {
         console.error('Fetch exception:', err);
     }

@@ -16,13 +16,14 @@ return new class extends Migration
                 ->constrained('penjuals')
                 ->cascadeOnDelete();
 
-            $table->string('tenant_name');
+            $table->string('tenant_name')->unique();
             $table->string('desk_tenant')->nullable();
             $table->string('no_tenant');
             $table->enum('kantin',['1','2']);
             $table->string('foto_tenant')->nullable();
 
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

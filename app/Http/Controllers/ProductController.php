@@ -113,6 +113,7 @@ class ProductController extends Controller
                         'produks_id'    => $product->id,
                         'nama_variant'  => $namaVariant,
                         'harga_variant' => $request->harga_variant[$i] ?? 0,
+                        'status_variant'=> isset($request->status_variant[$i]) ? (bool)$request->status_variant[$i] : true,
                     ]);
                 }
             }
@@ -173,6 +174,15 @@ class ProductController extends Controller
             'stok'         => $validated['stok'],
             'foto_produk'  => $product->foto_produk,
         ]);
+        if ($product->stok == 3) {
+    $penjual = $product->tenant->penjual ?? null;
+
+    if ($penjual && $penjual->user) {
+        $penjual->user->notify(
+            new \App\Notifications\LowStockNotification($product)
+        );
+    }
+}
 
         Variant::where('produks_id', $product->id)->delete();
 
@@ -183,6 +193,7 @@ class ProductController extends Controller
                         'produks_id'    => $product->id,
                         'nama_variant'  => $namaVariant,
                         'harga_variant' => $request->harga_variant[$i] ?? 0,
+                        'status_variant'=> isset($request->status_variant[$i]) ? (bool)$request->status_variant[$i] : true,
                     ]);
                 }
             }

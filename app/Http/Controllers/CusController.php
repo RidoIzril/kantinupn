@@ -33,6 +33,7 @@ class CusController extends Controller
         $categories = Kategori::all();
 
         $query = Penjual::query()
+            ->where('status', 'aktif')
             ->whereHas('tenant')
             ->with([
                 'tenant',
@@ -101,7 +102,7 @@ class CusController extends Controller
         $penjual = Penjual::with([
             'tenant',
             'tenant.produks' => function ($q) {
-                $q->where('stok', '>', 0)->with('kategoris', 'variants');
+                $q->with('kategoris', 'variants');
             }
         ])->findOrFail($id);
 

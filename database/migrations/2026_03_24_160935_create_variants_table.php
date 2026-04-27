@@ -17,8 +17,10 @@ return new class extends Migration
 
             $table->string('nama_variant');
             $table->decimal('harga_variant',12,2)->default(0);
+            $table->boolean('status_variant')->default(true);
 
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

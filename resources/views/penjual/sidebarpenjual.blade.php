@@ -51,26 +51,25 @@
             <span class="text-sm font-medium">Menu</span>
         </a>
 
-        <a data-protected="1" href="{{ route('payment.list_payment') }}"
+        <a data-protected="1" href="{{ route('penjual.order.index') }}"
            class="menu-link group flex items-center gap-3 px-4 py-2 rounded-lg transition-all duration-200 ease-out
                   text-green-200 hover:bg-green-700 hover:text-white hover:translate-x-1 active:scale-[0.98]">
-            <i class="bi bi-credit-card text-lg transition-transform duration-200 group-hover:rotate-3"></i>
-            <span class="text-sm font-medium">Payment</span>
+            <i class="bi bi-box-seam text-lg transition-transform duration-200 group-hover:rotate-3"></i>
+            <span class="text-sm font-medium">Pesanan</span>
         </a>
-
-        <a data-protected="1" href="{{ route('penjual.transaction_manage.manage') }}"
-           class="menu-link group flex items-center gap-3 px-4 py-2 rounded-lg transition-all duration-200 ease-out
-                  text-green-200 hover:bg-green-700 hover:text-white hover:translate-x-1 active:scale-[0.98]">
-            <i class="bi bi-receipt text-lg transition-transform duration-200 group-hover:rotate-3"></i>
-            <span class="text-sm font-medium">Transaksi</span>
+        <a data-protected="1" href="{{ route('penjual.laporan.index') }}"
+            class="menu-link group flex items-center gap-3 px-4 py-2 rounded-lg transition-all duration-200 ease-out
+                    text-green-200 hover:bg-green-700 hover:text-white hover:translate-x-1 active:scale-[0.98]">
+                <i class="bi bi-bar-chart-line text-lg transition-transform duration-200 group-hover:rotate-3"></i>
+                <span class="text-sm font-medium">Laporan</span>
         </a>
 
         <a data-protected="1" href="{{ route('penjual.profile.edit') }}"
-   class="menu-link group flex items-center gap-3 px-4 py-2 rounded-lg transition-all duration-200 ease-out
-          text-green-200 hover:bg-green-700 hover:text-white hover:translate-x-1 active:scale-[0.98]">
-    <i class="bi bi-person-circle text-lg transition-transform duration-200 group-hover:rotate-3"></i>
-    <span class="text-sm font-medium">Profile</span>
-</a>
+            class="menu-link group flex items-center gap-3 px-4 py-2 rounded-lg transition-all duration-200 ease-out
+                    text-green-200 hover:bg-green-700 hover:text-white hover:translate-x-1 active:scale-[0.98]">
+                <i class="bi bi-person-circle text-lg transition-transform duration-200 group-hover:rotate-3"></i>
+                <span class="text-sm font-medium">Profile</span>
+        </a>
 
         <hr class="border-green-700 my-4">
 

@@ -78,6 +78,23 @@
                placeholder="No Tenant"
                class="w-full border p-2 rounded">
 
+        <hr>
+        <div class="flex items-center gap-3 mt-4">
+            <label for="status_delivery" class="font-medium select-none">Delivery</label>
+            <input type="hidden" name="status_delivery" value="0">
+            <button type="button"
+                id="deliverySwitch"
+                class="relative w-12 h-7 rounded-full transition-colors duration-200 bg-gray-300
+                    {{ old('status_delivery', $penjual->tenant->status_delivery ?? 0) ? 'bg-green-500' : '' }}">
+                <span class="absolute left-1 top-1 w-5 h-5 rounded-full bg-white shadow
+                    transition-transform duration-200
+                    {{ old('status_delivery', $penjual->tenant->status_delivery ?? 0) ? 'translate-x-5' : '' }}"></span>
+            </button>
+            <span id="deliverySwitchLabel" class="ml-2 text-sm font-medium">
+                {{ (old('status_delivery', $penjual->tenant->status_delivery ?? 0) ? 'Aktif' : 'Nonaktif') }}
+            </span>
+            <input type="hidden" name="status_delivery" id="inputStatusDelivery" value="{{ old('status_delivery', $penjual->tenant->status_delivery ?? 0) }}">
+        </div>
         <input type="file" name="foto_tenant" class="w-full border p-2 rounded">
 
         @if(!empty($penjual->tenant->foto_tenant))
@@ -98,4 +115,30 @@
         </div>
     </form>
 </div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const switchBtn  = document.getElementById('deliverySwitch');
+    const inputDeliv = document.getElementById('inputStatusDelivery');
+    const switchLabel = document.getElementById('deliverySwitchLabel');
+    if(!switchBtn) return;
+
+    let aktif = Number(inputDeliv.value) === 1;
+
+    function renderSwitch() {
+        switchBtn.classList.toggle('bg-green-500', aktif);
+        switchBtn.classList.toggle('bg-gray-300', !aktif);
+        switchBtn.firstElementChild.classList.toggle('translate-x-5', aktif);
+        switchLabel.textContent = aktif ? 'Aktif' : 'Nonaktif';
+        inputDeliv.value = aktif ? "1" : "0";
+    }
+
+    switchBtn.addEventListener('click', function(e) {
+        aktif = !aktif;
+        renderSwitch();
+    });
+
+    // Pastikan state awal sesuai
+    renderSwitch();
+});
+</script>
 @endsection

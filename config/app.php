@@ -12,6 +12,7 @@ return [
     | other UI elements where an application name needs to be displayed.
     |
     */
+    App\Providers\XenditServiceProvider::class,
 
     'name' => env('APP_NAME', 'Laravel'),
 
@@ -65,7 +66,7 @@ return [
     |
     */
 
-    'timezone' => env('APP_TIMEZONE', 'UTC'),
+    'timezone' => env('APP_TIMEZONE', 'Asia/Jakarta'),
 
     /*
     |--------------------------------------------------------------------------

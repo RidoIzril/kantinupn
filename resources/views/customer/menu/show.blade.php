@@ -23,64 +23,105 @@
                 alt="Foto Tenant"
             >
             <div>
-    <h1 class="text-3xl font-bold text-gray-900">
-        {{ $penjual->tenant?->tenant_name ?? 'Tenant' }}
-    </h1>
-    
-    {{-- NO TENANT & KANTIN --}}
-    <div class="mt-1">
-        <span class="inline-block text-xs bg-gray-100 rounded px-2 py-0.5 mr-2">
-            No Tenant: {{ $penjual->tenant?->no_tenant ?? '-' }}
-        </span>
-        <span class="inline-block text-xs bg-gray-100 rounded px-2 py-0.5">
-            Kantin: 
-            {{
-                $penjual->tenant?->kantin == '1' ? 'Kantin 1' : (
-                    $penjual->tenant?->kantin == '2' ? 'Kantin 2' : '-'
-                )
-            }}
-        </span>
-    </div>
-
-    {{-- DESKRIPSI TENANT --}}
-    <div class="mt-2 text-xs text-gray-700">
-        {{ $penjual->tenant?->desk_tenant ? $penjual->tenant->desk_tenant : '-' }}
-    </div>
-</div>
+                <h1 class="text-3xl font-bold text-gray-900">
+                    {{ $penjual->tenant?->tenant_name ?? 'Tenant' }}
+                </h1>
+                <div class="mt-1">
+                    <span class="inline-block text-xs bg-gray-100 rounded px-2 py-0.5 mr-2">
+                        No Tenant: {{ $penjual->tenant?->no_tenant ?? '-' }}
+                    </span>
+                    <span class="inline-block text-xs bg-gray-100 rounded px-2 py-0.5">
+                        Kantin: 
+                        {{
+                            $penjual->tenant?->kantin == '1' ? 'Kantin 1' : (
+                                $penjual->tenant?->kantin == '2' ? 'Kantin 2' : '-'
+                            )
+                        }}
+                    </span>
+                </div>
+                <div class="mt-2 text-xs text-gray-700">
+                    {{ $penjual->tenant?->desk_tenant ? $penjual->tenant->desk_tenant : '-' }}
+                </div>
+            </div>
         </div>
 
         <h2 class="text-lg font-semibold mb-4">Menu</h2>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
             @forelse(($penjual->tenant->produks ?? collect()) as $product)
-                <div class="bg-white rounded-xl shadow p-4 flex flex-col">
-                    <img
-                        src="{{ !empty($product->foto_produk) ? asset('storage/'.$product->foto_produk) : asset('images/default-product.png') }}"
-                        class="h-36 w-full object-cover rounded-lg mb-3"
-                        alt="{{ $product->nama }}"
-                    >
+                @php 
+                    $stok = $product->stok ?? 0;
+                    $isStockHabis = $stok <= 0;
+                @endphp
+                @php $isStockHabis = ($product->stok ?? 0) <= 0; @endphp
+
+                {{-- ✅ PERUBAHAN DI SINI (CARD JADI ABU-ABU) --}}
+                <div class="rounded-xl shadow p-4 flex flex-col 
+                    {{ $isStockHabis ? 'bg-gray-100 opacity-70' : 'bg-white' }}">
+
+                    <div class="relative h-36 w-full mb-3">
+                        <img
+                            src="{{ !empty($product->foto_produk) ? asset('storage/'.$product->foto_produk) : asset('images/default-product.png') }}"
+                            class="h-36 w-full object-cover rounded-lg 
+                                {{ $isStockHabis ? 'grayscale' : '' }}"
+                            alt="{{ $product->nama }}"
+                        >
+                        @if($isStockHabis)
+                            <div class="absolute inset-0 bg-black/50 flex items-center justify-center rounded-lg">
+                                <span class="text-white font-bold text-sm">Stok Habis</span>
+                            </div>
+                        @endif
+                    </div>
 
                     <h3 class="font-semibold text-sm">{{ $product->nama }}</h3>
                     <p class="text-xs text-gray-500">{{ $product->kategoris->nama_kategori ?? '-' }}</p>
-                    <p class="text-green-600 font-bold mt-2">
-                        Rp {{ number_format($product->harga, 0, ',', '.') }}
-                    </p>
 
-                    {{-- Guest boleh buka modal --}}
-                    <button
+                    <div class="flex items-center justify-between mt-2">
+                        <p class="text-green-600 font-bold">
+                            Rp {{ number_format($product->harga, 0, ',', '.') }}
+                        </p>
+
+                        @if($stok <= 0)
+                            <span class="text-xs bg-red-100 text-red-600 px-2 py-1 rounded whitespace-nowrap">
+                                Habis
+                            </span>
+                        @elseif($stok <= 5)
+                            <span class="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded whitespace-nowrap">
+                                Stok {{ $stok }}
+                            </span>
+                        @else
+                            <span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded whitespace-nowrap">
+                                Stok {{ $stok }}
+                            </span>
+                        @endif
+                    </div>
+
+                    @if($isStockHabis)
+                        <button
+                            type="button"
+                            disabled
+                            class="w-full mt-3 bg-gray-300 text-gray-400 cursor-not-allowed py-2 rounded-lg font-semibold"
+                        >
+                            Stok Habis
+                        </button>
+                    @else
+                        <button
                         type="button"
                         onclick='openMenuModal(
-                            {{ $product->id }},
-                            @json($product->nama),
-                            {{ (int) $product->harga }},
-                            @json(!empty($product->foto_produk) ? asset("storage/".$product->foto_produk) : asset("images/default-product.png")),
-                            @json($product->variants ?? [])
-                        )'
-                        class="w-full mt-3 bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg"
-                    >
-                        + Tambah ke Keranjang
-                    </button>
+                                {{ $product->id }},
+                                @json($product->nama),
+                                {{ (int) $product->harga }},
+                                @json(!empty($product->foto_produk) ? asset("storage/".$product->foto_produk) : asset("images/default-product.png")),
+                                @json($product->variants->where("status_variant", 1)->values() ?? []),
+                                {{ (int) $product->stok ?? 0 }}
+                            )'
+                            class="w-full mt-3 bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg"
+                        >
+                            + Tambah ke Keranjang
+                        </button>
+                    @endif
                 </div>
+
             @empty
                 <div class="col-span-full text-center text-slate-500 bg-white p-6 rounded-xl shadow">
                     Belum ada menu tersedia.
@@ -90,7 +131,9 @@
     </div>
 </div>
 
-{{-- MODAL --}}
+{{-- ⚠️ SEMUA BAGIAN MODAL & JS TIDAK DIUBAH --}}
+
+{{-- MODAL DAN JS DIBAWAH DITAMBAH VALIDASI STOCK --}}
 <div id="menuModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-end justify-center z-50">
     <div class="bg-white w-full max-w-md rounded-t-2xl p-6">
         <div class="flex justify-between items-center mb-4">
@@ -98,17 +141,46 @@
             <button type="button" onclick="closeModal()" class="text-gray-500 text-xl">✕</button>
         </div>
 
-        <div class="flex gap-3 mb-4">
-            <img id="modalImage" class="w-20 h-20 rounded object-cover" alt="Produk">
-            <div>
-                <p id="modalName" class="font-semibold"></p>
-                <p id="modalBasePrice" class="text-green-600 font-bold"></p>
+        <div class="flex gap-3 mb-4 items-center justify-between">
+            <div class="flex items-center gap-3">
+                <img id="modalImage" class="w-20 h-20 rounded object-cover" alt="Produk">
+                <div>
+                    <p id="modalName" class="font-semibold"></p>
+                    <p id="modalBasePrice" class="text-green-600 font-bold"></p>
+                </div>
+            </div>
+            <div class="flex items-center">
+                <button
+                    type="button"
+                    onclick="decreaseQty()"
+                    id="qtyMinusBtn"
+                    class="w-8 h-8 border border-gray-300 rounded text-lg font-bold text-gray-700 flex items-center justify-center 
+                        hover:border-[#ee4d2d] hover:bg-[#fff1ee] focus:outline-none disabled:border-gray-200 disabled:text-gray-300 disabled:bg-gray-100 transition"
+                    aria-label="Kurangi jumlah"
+                >-</button>
+                <input
+                    id="qty"
+                    type="number"
+                    value="1"
+                    min="1"
+                    class="mx-1 w-10 h-8 text-center border-0 rounded bg-transparent focus:outline-[#ee4d2d] font-semibold"
+                    style="appearance: textfield"
+                    readonly
+                >
+                <button
+                    type="button"
+                    onclick="increaseQty()"
+                    id="qtyPlusBtn"
+                    class="w-8 h-8 border border-gray-300 rounded text-lg font-bold text-gray-700 flex items-center justify-center 
+                        hover:border-[#ee4d2d] hover:bg-[#fff1ee] focus:outline-none disabled:border-gray-200 disabled:text-gray-300 disabled:bg-gray-100 transition"
+                    aria-label="Tambah jumlah"
+                >+</button>
             </div>
         </div>
-
+        
         <form id="addToCartForm" method="POST" action="{{ route('cart.add') }}">
             @csrf
-            {{-- dipertahankan untuk kompatibilitas backend lama --}}
+            {{-- dipertahankan untuk kompatibilitas backend --}}
             <input type="hidden" name="token" id="modalToken" value="{{ request('token') }}">
             <input type="hidden" name="product_id" id="modalProductId">
             <input type="hidden" name="qty" id="modalQty" value="1">
@@ -118,27 +190,29 @@
                 <div id="variantContainer" class="space-y-2"></div>
             </div>
 
-            <div class="flex items-center gap-3 mb-4">
-                <button type="button" onclick="decreaseQty()" class="px-3 py-1 border rounded">-</button>
-                <input id="qty" type="number" value="1" min="1" class="w-14 text-center border rounded">
-                <button type="button" onclick="increaseQty()" class="px-3 py-1 border rounded">+</button>
+            <div class="mb-4">
+                <label for="modalCatatanMenu" class="block font-semibold mb-1">Catatan Menu (Opsional)</label>
+                <textarea name="catatan_menu" id="modalCatatanMenu"
+                        class="w-full border rounded px-3 py-2 text-sm"
+                        placeholder="Catatan khusus untuk menu ini (boleh dikosongkan)"></textarea>
             </div>
 
             <div class="border-t pt-3 mb-4">
-                <p class="text-sm text-gray-500">Total Harga</p>
-                <p id="totalPrice" class="text-xl font-bold text-green-600">Rp 0</p>
+                <div class="flex flex-col items-end">
+                    <p class="text-sm text-gray-500">Total Harga</p>
+                    <p id="totalPrice" class="text-xl font-bold text-green-600">Rp 0</p>
+                </div>
             </div>
 
-            {{-- Redirect login hanya saat klik tombol merah (submit form) --}}
             <button type="submit" class="w-full bg-red-500 hover:bg-red-600 text-white py-3 rounded-lg">
                 Masukkan ke Keranjang
             </button>
         </form>
     </div>
 </div>
-
 <script>
 let basePrice = 0;
+let maxStock = 0; // tambahkan limit stock
 
 // fallback token dari localStorage (untuk user customer yang login via localStorage)
 (function setTokenFallback() {
@@ -146,12 +220,13 @@ let basePrice = 0;
     if (hidden && !hidden.value) hidden.value = localStorage.getItem('token') || '';
 })();
 
-function openMenuModal(id, name, price, image, variants) {
+function openMenuModal(id, name, price, image, variants, stok) {
     const modal = document.getElementById('menuModal');
     modal.classList.remove('hidden');
     modal.classList.add('flex');
 
     basePrice = Number(price) || 0;
+    maxStock  = parseInt(stok || 0); // set maxStock dari argumen
 
     document.getElementById('modalProductId').value = id;
     document.getElementById('modalName').innerText = name;
@@ -199,7 +274,14 @@ function renderVariants(variants) {
 
 function increaseQty() {
     const qty = document.getElementById('qty');
-    qty.value = parseInt(qty.value || 1) + 1;
+    let nextQty = parseInt(qty.value || 1) + 1;
+
+    if (maxStock > 0 && nextQty > maxStock) {
+        alert('Jumlah pesanan melebihi stok tersedia!');
+        return;
+    }
+
+    qty.value = nextQty;
     document.getElementById('modalQty').value = qty.value;
     calculateTotal();
 }
@@ -229,7 +311,7 @@ function closeModal() {
     modal.classList.add('hidden');
 }
 
-// Guard submit: redirect login HANYA saat klik "Masukkan ke Keranjang"
+// Guard submit: redirect login HANYA saat klik "Masukkan ke Keranjang" + validasi stok
 (function guardAddToCartSubmit() {
     const form = document.getElementById('addToCartForm');
     if (!form) return;
@@ -238,6 +320,14 @@ function closeModal() {
         const token = localStorage.getItem('token');
         const role  = localStorage.getItem('role');
         const isCustomer = !!token && role === 'customer';
+
+        // Cek stok sebelum submit
+        const qty = parseInt(document.getElementById('qty').value || "1");
+        if (maxStock > 0 && qty > maxStock) {
+            e.preventDefault();
+            alert('Jumlah pesanan melebihi stok tersedia!');
+            return;
+        }
 
         if (!isCustomer) {
             e.preventDefault();

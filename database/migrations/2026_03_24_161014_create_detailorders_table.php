@@ -16,12 +16,22 @@ return new class extends Migration
                 ->cascadeOnDelete();
 
             $table->foreignId('produks_id')
-                ->constrained('produks');
+                ->nullable()
+                ->constrained('produks')
+                ->nullOnDelete();
+            // Jika varian optional, bisa nullable()
+            $table->foreignId('variants_id')
+                ->nullable() 
+                ->constrained('variants')
+                ->nullOnDelete();
+
+            $table->string('catatan_menu')->nullable();  // custom note per item/menu (opsional)
 
             $table->integer('jumlah');
             $table->decimal('total_harga',12,2);
 
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

@@ -22,8 +22,7 @@ return new class extends Migration
                 ->nullable()
                 ->constrained('variants');
 
-            $table->string('catatan_menu')->nullable();
-            $table->string('nomor_meja')->nullable();
+            
             $table->integer('jumlah');
             $table->decimal('harga_per_item',12,2);
             $table->decimal('subtotal',12,2);

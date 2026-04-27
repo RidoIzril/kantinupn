@@ -8,6 +8,8 @@ use App\Models\Customers;
 use App\Models\Transaksi;
 use App\Models\User;
 use App\Models\Tenants;
+use Carbon\Carbon;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -285,4 +287,105 @@ class SuperadminController extends Controller
     {
         return $this->storePenjual($request);
     }
+    public function laporan(Request $request)
+{
+    $start  = $request->start_date;
+    $end    = $request->end_date;
+    $tenant = $request->tenant_id;
+
+    $query = \App\Models\Transaksi::with([
+        'order.customer',
+        'order.details.produk.tenant' // penting 🔥
+    ])
+    ->where('status_pembayaran', 'paid');
+
+    // ✅ FILTER TANGGAL (pakai order_tanggal)
+    if ($start && $end) {
+        $query->whereHas('order', function ($q) use ($start, $end) {
+            $q->whereBetween('order_tanggal', [$start, $end]);
+        });
+    }
+
+    // ✅ FILTER TENANT
+    if ($tenant) {
+        $query->whereHas('order.details.produk', function ($q) use ($tenant) {
+            $q->where('tenants_id', $tenant);
+        });
+    }
+
+    $transaksis = $query->latest()->get();
+
+    $totalPendapatan = $transaksis->sum('jumlah_bayar');
+    $totalTransaksi  = $transaksis->count();
+
+    // ambil list tenant untuk dropdown
+    $tenants = \App\Models\Tenants::all();
+
+    return view('superadmin.laporan.index', compact(
+        'transaksis',
+        'totalPendapatan',
+        'totalTransaksi',
+        'tenants'
+    ));
+}
+public function exportPdf(Request $request)
+{
+    $query = \App\Models\Transaksi::with([
+        'order.customer',
+        'order.details.produk.tenant'
+    ])->where('status_pembayaran', 'paid');
+
+    // FILTER TANGGAL
+    if ($request->start_date && $request->end_date) {
+        $query->whereHas('order', function ($q) use ($request) {
+            $q->whereBetween('order_tanggal', [
+                \Carbon\Carbon::parse($request->start_date)->startOfDay(),
+                \Carbon\Carbon::parse($request->end_date)->endOfDay()
+            ]);
+        });
+    }
+
+    // FILTER TENANT
+    if ($request->tenant_id) {
+        $query->whereHas('order.details.produk', function ($q) use ($request) {
+            $q->where('tenants_id', $request->tenant_id);
+        });
+    }
+
+    $transaksis = $query->get();
+
+    $totalPendapatan = $transaksis->sum('jumlah_bayar');
+    $totalTransaksi  = $transaksis->count();
+
+    // ✅ FIX: PASTIKAN SELALU ADA NILAI
+    $tenantNama = 'Semua Tenant';
+
+    if ($request->tenant_id) {
+    $tenant = \App\Models\Tenants::find($request->tenant_id);
+    $tenantNama = $tenant->tenant_name ?? 'Tidak ditemukan';
+} else {
+    // 🔥 ambil langsung dari DB
+    $tenantNama = DB::table('detailorders')
+        ->join('produks', 'detailorders.produks_id', '=', 'produks.id')
+        ->join('tenants', 'produks.tenants_id', '=', 'tenants.id')
+        ->select('tenants.tenant_name')
+        ->distinct()
+        ->pluck('tenant_name')
+        ->implode(', ');
+
+    if (!$tenantNama) {
+        $tenantNama = 'Semua Tenant';
+    }
+    }
+
+    $pdf = Pdf::loadView('superadmin.laporan.pdf', compact(
+        'transaksis',
+        'totalPendapatan',
+        'totalTransaksi',
+        'request',
+        'tenantNama'
+    ));
+
+    return $pdf->download('laporan-penjualan.pdf');
+}
 }

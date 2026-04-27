@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\OrderController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CusController;
 use App\Http\Controllers\CartController;
@@ -10,6 +11,7 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ManageController;
 use App\Http\Controllers\SuperadminController;
+use App\Http\Controllers\XenditWebhookController;
 
 /*
 |--------------------------------------------------------------------------
@@ -55,7 +57,17 @@ Route::prefix('customer')->group(function(){
     Route::delete('/customer/keranjang/remove', [CartController::class, 'remove'])->name('cart.remove');
     Route::post('/customer/keranjang/checkout', [CartController::class, 'checkout'])->name('cart.checkout');
         
+    //invoice
+    Route::get('/customer/invoice/cash/{id}', [App\Http\Controllers\TransactionController::class, 'showInvoice'])->name('invoice.cash');
+    // AJAX check status pembayaran order
+    Route::get('/customer/payment/qris', [PaymentController::class, 'qris'])->name('customer.payment.qris');
+    Route::get('/customer/payment/qris/checkstatus', [PaymentController::class, 'checkQrisStatus'])->name('payment.qris.checkstatus');
+    Route::post('/xendit/webhook', [XenditWebhookController::class, 'handle']);
+
+    Route::get('/riwayat-pesanan', [OrderController::class, 'history'])->name('orders.history');
+    Route::get('/riwayat-pesanan/{order}', [OrderController::class, 'historyShow'])->name('orders.history.show');
     // Transaksi
+
     Route::get('/customer/transaksi', [TransactionController::class, 'index'])
         ->name('transactions.list_transaction');
 
@@ -89,6 +101,8 @@ Route::prefix('penjual')->group(function () {
         return view('penjual.homepenjual');
     })->name('penjual.homepenjual');
 
+    Route::get('/penjual/notifications', [PenjualController::class, 'notifications']);
+
     Route::get('/profile', function () {
     return view('penjual.profile.index');
 })->name('penjual.profile.show');
@@ -96,6 +110,12 @@ Route::prefix('penjual')->group(function () {
     Route::get('/profile/edit', [PenjualController::class, 'profileEdit'])->name('penjual.profile.edit');
     Route::put('/profile/update', [PenjualController::class, 'profileUpdate'])->name('penjual.profile.update');
     Route::delete('/profile/delete', [PenjualController::class, 'profileDestroy'])->name('penjual.profile.destroy');
+
+    Route::get('/order', [OrderController::class, 'pesanan'])->name('penjual.order.index');
+    Route::get('/order/{id}', [OrderController::class, 'pesananShow'])->name('penjual.order.show');
+    Route::post('/order/{id}/process', [OrderController::class, 'pesananProcess'])->name('penjual.order.process');
+    Route::post('/order/{id}/complete', [OrderController::class, 'pesananComplete'])->name('penjual.order.complete');
+    Route::post('/order/{id}/cancel', [OrderController::class, 'pesananCancel'])->name('penjual.order.cancel');
 
     Route::get('/kelola_transaksi', [ManageController::class, 'index'])
         ->name('penjual.transaction_manage.manage');
@@ -127,6 +147,12 @@ Route::prefix('penjual')->group(function () {
 
     Route::delete('/produk/{id}', [ProductController::class, 'destroy'])
         ->name('produk.destroy');
+
+    Route::get('/penjual/laporan', [PenjualController::class, 'laporan'])->name('penjual.laporan.index');
+    Route::get('/penjual/laporan/{id}', [PenjualController::class, 'detailLaporan'])
+    ->name('penjual.laporan.detail');
+    Route::get('/laporan/pdf', [PenjualController::class, 'exportPdf'])
+    ->name('penjual.laporan.pdf');
 
     // PAYMENT
     Route::get('/payment', [PaymentController::class, 'index'])
@@ -168,4 +194,10 @@ Route::prefix('superadmin')
     Route::put('/penjual/{id}', [SuperadminController::class, 'updatePenjual'])->name('penjual.update');
     Route::put('/penjual/{id}/status', [SuperadminController::class, 'updateStatus'])->name('penjual.update_status');
     Route::delete('/penjual/{id}', [SuperadminController::class, 'destroyPenjual'])->name('penjual.destroy');
+
+    Route::get('laporan', [SuperadminController::class, 'laporan'])->name('laporan.index');
+    Route::get('/superadmin/laporan/{id}', [SuperadminController::class, 'detailLaporan'])
+    ->name('superadmin.laporan.detail');
+    Route::get('/laporan/pdf', [SuperadminController::class, 'exportPdf'])
+    ->name('laporan.pdf');
 });
