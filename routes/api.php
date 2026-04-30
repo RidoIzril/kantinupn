@@ -12,6 +12,32 @@ use App\Http\Controllers\PaymentController;
     Route::post('/register', [AuthApiController::class, 'register']);
     Route::post('/xendit/webhook', [XenditWebhookController::class, 'handle']);
 
+    Route::get('/me-token', function (Request $request) {
+
+    $token = $request->query('token');
+
+    if (!$token) {
+        return response()->json(null);
+    }
+
+    $accessToken = \Laravel\Sanctum\PersonalAccessToken::findToken($token);
+
+    if (!$accessToken) {
+        return response()->json(null);
+    }
+
+    $user = $accessToken->tokenable;
+
+    if (!$user) {
+        return response()->json(null);
+    }
+
+    $customer = \App\Models\Customers::where('users_id', $user->id)->first();
+
+    return response()->json([
+        'nama_lengkap' => $customer->nama_lengkap ?? 'User'
+    ]);
+});
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('/logout', [AuthApiController::class, 'logout']);
 

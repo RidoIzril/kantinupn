@@ -6,7 +6,7 @@
 
     <!-- HEADER -->
     <div class="flex items-center justify-center gap-4 mb-6">
-        <img src="{{ asset('template/dist/assets/compiled/png/LogoKantin.png') }}"
+        <img src="{{ asset('template/dist/assets/compiled/png/logobaru.png') }}"
              class="w-24 h-24 object-contain">
 
         <div class="text-left leading-tight">

@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="max-w-4xl mx-auto py-8">
+<div class="max-w-4xl mx-auto py-8 pt-16 md:pt-8">
     <h2 class="text-2xl font-bold mb-5 text-green-800">Riwayat Pesanan Anda</h2>
     
     {{-- Desktop TABLE view --}}

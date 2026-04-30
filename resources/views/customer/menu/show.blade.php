@@ -16,34 +16,56 @@
             </div>
         @endif
 
-        <div class="bg-white rounded-xl shadow p-6 mb-6 flex gap-4">
+            <div class="bg-white rounded-xl shadow p-5 mb-6 mt-6 md:mt-8 flex items-center gap-4">
+
+    <!-- FOTO (FIX GA KEPOTONG + TENGAH) -->
+        <div class="w-24 h-24 flex items-center justify-center bg-gray-100 rounded-xl overflow-hidden">
             <img
                 src="{{ !empty($penjual->tenant?->foto_tenant) ? asset('storage/'.$penjual->tenant->foto_tenant) : asset('images/default-store.png') }}"
-                class="w-24 h-24 rounded-xl object-cover"
+                class="max-w-full max-h-full object-contain"
                 alt="Foto Tenant"
             >
-            <div>
-                <h1 class="text-3xl font-bold text-gray-900">
-                    {{ $penjual->tenant?->tenant_name ?? 'Tenant' }}
-                </h1>
-                <div class="mt-1">
-                    <span class="inline-block text-xs bg-gray-100 rounded px-2 py-0.5 mr-2">
-                        No Tenant: {{ $penjual->tenant?->no_tenant ?? '-' }}
-                    </span>
-                    <span class="inline-block text-xs bg-gray-100 rounded px-2 py-0.5">
-                        Kantin: 
-                        {{
-                            $penjual->tenant?->kantin == '1' ? 'Kantin 1' : (
-                                $penjual->tenant?->kantin == '2' ? 'Kantin 2' : '-'
-                            )
-                        }}
-                    </span>
-                </div>
-                <div class="mt-2 text-xs text-gray-700">
-                    {{ $penjual->tenant?->desk_tenant ? $penjual->tenant->desk_tenant : '-' }}
-                </div>
-            </div>
         </div>
+
+        <!-- CONTENT -->
+        <div class="flex-1">
+
+            <h1 class="text-2xl font-bold text-gray-800">
+                {{ $penjual->tenant?->tenant_name ?? 'Tenant' }}
+            </h1>
+
+            <!-- CHAT -->
+          <a href="#"
+   onclick="goToChat('{{ $penjual->users_id }}')"
+   class="mt-2 inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1.5 rounded-md">
+    <i class="bi bi-chat-dots text-sm"></i>
+    Chat
+</a>
+
+            <!-- INFO -->
+            <div class="flex flex-wrap gap-2 mt-2 text-xs text-gray-600">
+                <span class="bg-gray-100 px-2 py-0.5 rounded">
+                    No Tenant: {{ $penjual->tenant?->no_tenant ?? '-' }}
+                </span>
+
+                <span class="bg-gray-100 px-2 py-0.5 rounded">
+                    Kantin:
+                    {{
+                        $penjual->tenant?->kantin == '1' ? 'Kantin 1' : (
+                            $penjual->tenant?->kantin == '2' ? 'Kantin 2' : '-'
+                        )
+                    }}
+                </span>
+            </div>
+
+            <!-- DESKRIPSI -->
+            <p class="text-xs -500 mt-2">
+                {{ $penjual->tenant?->desk_tenant ?? '-' }}
+            </p>
+
+        </div>
+
+    </div>
 
         <h2 class="text-lg font-semibold mb-4">Menu</h2>
 
@@ -310,8 +332,18 @@ function closeModal() {
     modal.classList.remove('flex');
     modal.classList.add('hidden');
 }
+function goToChat(penjualId) {
+    const token = localStorage.getItem('token');
+    const role  = localStorage.getItem('role');
 
-// Guard submit: redirect login HANYA saat klik "Masukkan ke Keranjang" + validasi stok
+    if (!token || role !== 'customer') {
+        window.location.href = '/login';
+        return;
+    }
+
+    window.location.href = `/customer/customer/chat/${penjualId}?token=${token}`;
+}
+
 (function guardAddToCartSubmit() {
     const form = document.getElementById('addToCartForm');
     if (!form) return;

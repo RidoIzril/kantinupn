@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="max-w-2xl mx-auto py-8">
+<div class="max-w-2xl mx-auto py-8 pt-16 md:pt-8">
     <div class="bg-white rounded shadow px-6 py-6 border">
         <h2 class="text-xl font-bold mb-4 text-green-700">Detail Pesanan #{{ $order->id }}</h2>
         <dl>
@@ -13,7 +13,7 @@
                     @if($order->order_status=='pending') bg-yellow-100 text-yellow-800
                     @elseif($order->order_status=='diproses') bg-blue-100 text-blue-800
                     @elseif($order->order_status=='selesai') bg-green-100 text-green-800
-                    @elseif($order->order_status=='batal') bg-red-100 text-red-800
+                      @elseif($order->order_status=='batal') bg-red-100 text-red-800
                     @else bg-gray-100 text-gray-800 @endif">
                     {{ ucfirst($order->order_status) }}
                 </span>

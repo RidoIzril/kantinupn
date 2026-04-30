@@ -3,7 +3,7 @@
 @section('content')
 <div class="min-h-screen bg-gradient-to-br from-slate-100 via-green-50 to-slate-200">
 
-    <main class="max-w-7xl mx-auto px-4 md:px-6 py-6">
+    <main class="max-w-7xl mx-auto px-4 md:px-6 py-6 pt-16 md:pt-6">
         {{-- SEARCH --}}
         <form method="GET" class="mb-5 flex gap-3 animate-fade-in">
             <input

@@ -12,6 +12,7 @@ use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ManageController;
 use App\Http\Controllers\SuperadminController;
 use App\Http\Controllers\XenditWebhookController;
+use App\Http\Controllers\ChatController;
 
 /*
 |--------------------------------------------------------------------------
@@ -45,6 +46,12 @@ Route::prefix('customer')->group(function(){
 
     Route::get('/customer/penjual/{id}', [CusController::class, 'showPenjual'])
         ->name('customer.menu.show');
+
+    Route::get('/customer/chat', [ChatController::class, 'list'])->name('chat.list');
+    Route::get('/customer/chat/{userId}', [ChatController::class, 'room'])->name('chat.room');
+    Route::get('/customer/chat/get/{userId}', [ChatController::class, 'getChat']);
+    Route::post('/customer/chat/send', [ChatController::class, 'send']);
+
 
     Route::get('/customer/profile', [CusController::class, 'show'])->name('profile.profilecustomer');
     Route::put('/customer/profile', [CusController::class, 'update'])->name('profile.profilecustomer.update');
@@ -117,18 +124,11 @@ Route::prefix('penjual')->group(function () {
     Route::post('/order/{id}/complete', [OrderController::class, 'pesananComplete'])->name('penjual.order.complete');
     Route::post('/order/{id}/cancel', [OrderController::class, 'pesananCancel'])->name('penjual.order.cancel');
 
-    Route::get('/kelola_transaksi', [ManageController::class, 'index'])
-        ->name('penjual.transaction_manage.manage');
-
-    Route::get('/kelola_transaksi/show/{id}', [ManageController::class, 'show'])
-        ->name('penjual.transaction_manage.show');
-
-    Route::post('/kelola_transaksi/update/{id}', [ManageController::class, 'update'])
-        ->name('penjual.transaction_manage.update');
-
-    Route::post('/kelola_transaksi/cancel/{id}', [ManageController::class, 'cancel'])
-        ->name('penjual.transaction_manage.cancel');
-
+    Route::get('/chat', [ChatController::class, 'listPenjual'])->name('penjual.chat.list');
+    Route::get('/chat/get/{userId}', [ChatController::class, 'getChatPenjual']);
+    Route::get('/chat/{userId}', [ChatController::class, 'roomPenjual'])->name('penjual.chat.room');
+    Route::post('/chat/send', [ChatController::class, 'send']);
+    
     // PRODUK
     Route::get('/produk', [ProductController::class, 'index'])
         ->name('produk.list_produk');

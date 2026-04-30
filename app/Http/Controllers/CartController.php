@@ -42,9 +42,9 @@ class CartController extends Controller
         $user = $this->resolveUser($request);
     if (!$user || $user->role !== 'customer') {
         // Langsung redirect dengan pesan error
-        return redirect('/customer/profile')->withErrors([
-            'profile' => 'Silakan lengkapi profil terlebih dahulu sebelum melakukan transaksi.'
-        ]);
+        if (!$user || $user->role !== 'customer') {
+        return null; // ❗ WAJIB Customers / null
+    }
     }
 
     return Customers::firstOrCreate(

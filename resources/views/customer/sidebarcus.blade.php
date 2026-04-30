@@ -8,7 +8,7 @@
             <span class="text-xl leading-none">☰</span>
         </button>
         <div class="flex items-center gap-2">
-            <img src="{{ asset('template/dist/assets/compiled/png/Logokantin.png') }}"
+            <img src="{{ asset('template/dist/assets/compiled/png/logobaru.png') }}"
                  class="w-7 h-7 object-contain" alt="Logo">
             <span class="font-semibold text-slate-700" id="topbar-role-label">Guest</span>
         </div>
@@ -26,7 +26,7 @@
 
     {{-- HEADER --}}
     <div class="flex items-center gap-3 px-6 py-5 border-b border-green-700">
-        <img src="{{ asset('template/dist/assets/compiled/png/Logokantin.png') }}"
+        <img src="{{ asset('template/dist/assets/compiled/png/logobaru.png') }}"
              class="w-10 h-10 object-contain" alt="Logo">
         <div>
             <h1 class="text-lg font-bold">NKRI</h1>
@@ -34,52 +34,60 @@
         </div>
     </div>
 
-    {{-- MENU CUSTOMER (FULL) --}}
+    {{-- MENU CUSTOMER --}}
     <nav id="menu-customer" class="hidden flex-1 px-4 py-6 space-y-2">
+
         <a href="{{ route('customer.homecustomer') }}"
            class="menu-link group flex items-center gap-3 px-4 py-2 rounded-lg transition-all duration-200
            {{ Request::is('/') || Request::is('customer/home*') ? 'bg-green-700 text-white shadow-md translate-x-1' : 'text-green-200 hover:bg-green-700 hover:text-white hover:translate-x-1' }}">
-            <span class="text-lg">🛍️</span>
+            <i class="bi bi-speedometer2 text-lg transition-transform duration-200 group-hover:rotate-3"></i>
             <span class="text-sm font-medium">Dashboard</span>
         </a>
+
         <a id="menu-keranjang" href="{{ route('carts.cartcustomer') }}"
            class="menu-link group flex items-center gap-3 px-4 py-2 rounded-lg text-green-200 hover:bg-green-700 hover:text-white hover:translate-x-1 transition-all duration-200">
-            <span class="text-lg">🛒</span>
+            <i class="bi bi-cart text-lg transition-transform duration-200 group-hover:rotate-3"></i>
             <span class="text-sm font-medium">Keranjang</span>
         </a>
+
         <a id="menu-riwayat" href="{{ route('orders.history') }}"
            class="menu-link group flex items-center gap-3 px-4 py-2 rounded-lg text-green-200 hover:bg-green-700 hover:text-white hover:translate-x-1 transition-all duration-200">
-            <span class="text-lg">📄</span>
+            <i class="bi bi-clock-history text-lg transition-transform duration-200 group-hover:rotate-3"></i>
             <span class="text-sm font-medium">Riwayat Pesanan</span>
         </a>
-        <a id="menu-transaksi" href="{{ route('transactions.list_transaction') }}"
+
+        <a id="menu-chat"
+           href="{{ route('chat.list') }}"
            class="menu-link group flex items-center gap-3 px-4 py-2 rounded-lg text-green-200 hover:bg-green-700 hover:text-white hover:translate-x-1 transition-all duration-200">
-            <span class="text-lg">💳</span>
-            <span class="text-sm font-medium">Transaksi</span>
+            <i class="bi bi-chat-dots text-lg transition-transform duration-200 group-hover:rotate-3"></i>
+            <span class="text-sm font-medium">Live Chat</span>
         </a>
+
         <hr class="border-green-700 my-4">
+
         <a id="menu-profile" href="{{ route('profile.profilecustomer') }}"
            class="menu-link group flex items-center gap-3 px-4 py-2 rounded-lg text-green-200 hover:bg-green-700 hover:text-white hover:translate-x-1 transition-all duration-200">
-            <span class="text-lg">👤</span>
+            <i class="bi bi-person-circle text-lg transition-transform duration-200 group-hover:rotate-3"></i>
             <span class="text-sm font-medium">Profile</span>
         </a>
+
         <button id="menu-logout" onclick="logout()"
                 class="w-full flex items-center gap-3 px-4 py-2 rounded-lg text-red-300 hover:bg-red-500 hover:text-white transition-all duration-200 mt-4">
-            <span class="text-lg">🚪</span>
+            <i class="bi bi-box-arrow-left text-lg"></i>
             <span class="text-sm font-medium">Logout</span>
         </button>
     </nav>
 
-    {{-- MENU GUEST (MINIMAL) --}}
+    {{-- MENU GUEST --}}
     <nav id="menu-guest" class="flex-1 px-4 py-6 space-y-2">
         <a href="{{ route('login') }}"
            class="flex items-center gap-3 px-4 py-2 rounded-lg text-green-100 hover:bg-green-700 hover:text-white transition-all duration-200">
-            <span class="text-lg">🔐</span>
+            <i class="bi bi-box-arrow-in-right text-lg transition-transform duration-200 group-hover:rotate-3"></i>
             <span class="text-sm font-medium">Login</span>
         </a>
         <a href="{{ route('register') }}"
            class="flex items-center gap-3 px-4 py-2 rounded-lg text-green-100 hover:bg-green-700 hover:text-white transition-all duration-200">
-            <span class="text-lg">📝</span>
+            <i class="bi bi-person-plus text-lg transition-transform duration-200 group-hover:rotate-3"></i>
             <span class="text-sm font-medium">Register</span>
         </a>
     </nav>
@@ -90,93 +98,107 @@
 </aside>
 
 <script>
-(function setupSidebarMode() {
-    const SESSION_TTL_HOURS = 4;
-    const TTL_MS = SESSION_TTL_HOURS * 60 * 60 * 1000;
-
-    const path = window.location.pathname;
-    const isLanding = path === '/';
-    const isCustomerArea = path.startsWith('/customer/');
+(function () {
 
     let token = localStorage.getItem('token') || '';
-    let role = localStorage.getItem('role') || '';
-    let issuedAt = parseInt(localStorage.getItem('token_issued_at') || '0', 10);
+    let role  = localStorage.getItem('role') || '';
 
-    // token lama yang belum punya issued_at
-    if (token && role && !issuedAt) {
-        issuedAt = Date.now();
-        localStorage.setItem('token_issued_at', String(issuedAt));
-    }
-
-    // expire otomatis
-    if (token && role && issuedAt && (Date.now() - issuedAt > TTL_MS)) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('role');
-        localStorage.removeItem('token_issued_at');
-        token = '';
-        role = '';
-    }
-
-    const isCustomer = !isLanding && isCustomerArea && !!token && role === 'customer';
-    const sidebarRoleLabel = document.getElementById('sidebar-role-label');
-    const topbarRoleLabel  = document.getElementById('topbar-role-label');
+    const isCustomer = token && role === 'customer';
 
     const menuCustomer = document.getElementById('menu-customer');
     const menuGuest    = document.getElementById('menu-guest');
 
-    const menuKeranjang = document.getElementById('menu-keranjang');
-    const menuTransaksi = document.getElementById('menu-transaksi');
-    const menuProfile   = document.getElementById('menu-profile');
-    const menuRiwayat   = document.getElementById('menu-riwayat');
+    const menuIds = [
+        'menu-dashboard',
+        'menu-keranjang',
+        'menu-riwayat',
+        'menu-transaksi',
+        'menu-profile',
+        'menu-chat'
+    ];
 
     if (isCustomer) {
-        sidebarRoleLabel.textContent = 'Customer';
-        topbarRoleLabel.textContent  = 'Customer';
 
-        menuCustomer?.classList.remove('hidden');
-        menuGuest?.classList.add('hidden');
+        menuCustomer.classList.remove('hidden');
+        menuGuest.classList.add('hidden');
 
-        [menuKeranjang, menuTransaksi, menuProfile, menuRiwayat].forEach(a => {
-            if (!a) return;
-            const url = new URL(a.href, window.location.origin);
+        menuIds.forEach(id => {
+            let el = document.getElementById(id);
+            if (!el) return;
+
+            let url = new URL(el.href, window.location.origin);
             url.searchParams.set('token', token);
-            a.href = url.toString();
+            el.href = url.toString();
         });
-    } else {
-        sidebarRoleLabel.textContent = 'Guest';
-        topbarRoleLabel.textContent  = 'Guest';
 
-        menuCustomer?.classList.add('hidden');
-        menuGuest?.classList.remove('hidden');
+    } else {
+        menuCustomer.classList.add('hidden');
+        menuGuest.classList.remove('hidden');
     }
+
 })();
+
+function loadUserInfo() {
+    let token = localStorage.getItem('token');
+
+    if (!token) {
+        setGuest();
+        return;
+    }
+
+    fetch(`/api/me-token?token=${token}`)
+        .then(res => res.json())
+        .then(data => {
+
+            if (!data || !data.nama_lengkap) {
+                setGuest();
+                return;
+            }
+
+            // ✅ AMANKAN ELEMENT
+            const topbar = document.getElementById('topbar-role-label');
+            const sidebar = document.getElementById('sidebar-role-label');
+
+            if (topbar) topbar.innerText = data.nama_lengkap;
+            if (sidebar) sidebar.innerText = data.nama_lengkap;
+
+        })
+        .catch(() => setGuest());
+}
+
+function setGuest() {
+    const topbar = document.getElementById('topbar-role-label');
+    const sidebar = document.getElementById('sidebar-role-label');
+
+    if (topbar) topbar.innerText = "Guest";
+    if (sidebar) sidebar.innerText = "Guest";
+}
+
+// INIT
+loadUserInfo();
+// =======================
+// 🔥 FIX LOGOUT (DITAMBAHKAN)
+// =======================
+function logout() {
+    localStorage.removeItem('token');
+    localStorage.removeItem('role');
+    window.location.href = "/login";
+}
 
 function toggleSidebar() {
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('sidebar-overlay');
+
     const isOpen = !sidebar.classList.contains('-translate-x-full');
 
     if (isOpen) {
+        // tutup
         sidebar.classList.add('-translate-x-full');
         overlay.classList.add('hidden');
-        document.body.classList.remove('overflow-hidden');
     } else {
+        // buka
         sidebar.classList.remove('-translate-x-full');
         overlay.classList.remove('hidden');
-        document.body.classList.add('overflow-hidden');
     }
-}
-
-function logout() {
-    const token = localStorage.getItem('token');
-    fetch('/api/logout', {
-        method: 'POST',
-        headers: { 'Accept': 'application/json', 'Authorization': 'Bearer ' + token }
-    }).finally(() => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('role');
-        localStorage.removeItem('token_issued_at');
-        window.location.href = '/';
-    });
 }
 </script>

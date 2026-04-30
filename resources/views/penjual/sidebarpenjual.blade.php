@@ -9,7 +9,7 @@
         </button>
 
         <div class="flex items-center gap-2">
-            <img src="{{ asset('template/dist/assets/compiled/png/LogoKantin.png') }}"
+            <img src="{{ asset('template/dist/assets/compiled/png/logobaru.png') }}"
                  class="w-7 h-7 object-contain" alt="Logo">
             <span class="font-semibold text-slate-700">Penjual</span>
         </div>
@@ -29,7 +29,7 @@
               flex flex-col">
 
     <div class="flex items-center gap-3 px-6 py-5 border-b border-green-700">
-        <img src="{{ asset('template/dist/assets/compiled/png/LogoKantin.png') }}" class="w-10 h-10 object-contain" alt="Logo">
+        <img src="{{ asset('template/dist/assets/compiled/png/logobaru.png') }}" class="w-10 h-10 object-contain" alt="Logo">
         <div>
             <h1 class="text-lg font-bold">NKRI</h1>
             <p class="text-xs text-green-200">Kantin UPNVJT</p>
@@ -57,6 +57,14 @@
             <i class="bi bi-box-seam text-lg transition-transform duration-200 group-hover:rotate-3"></i>
             <span class="text-sm font-medium">Pesanan</span>
         </a>
+
+        <a data-protected="1" href="{{ route('penjual.chat.list') }}"
+            class="menu-link group flex items-center gap-3 px-4 py-2 rounded-lg transition-all duration-200 ease-out
+                    text-green-200 hover:bg-green-700 hover:text-white hover:translate-x-1 active:scale-[0.98]">
+                <i class="bi bi-chat-dots text-lg transition-transform duration-200 group-hover:rotate-3"></i>
+                <span class="text-sm font-medium">Live Chat</span>
+        </a>
+        
         <a data-protected="1" href="{{ route('penjual.laporan.index') }}"
             class="menu-link group flex items-center gap-3 px-4 py-2 rounded-lg transition-all duration-200 ease-out
                     text-green-200 hover:bg-green-700 hover:text-white hover:translate-x-1 active:scale-[0.98]">
