@@ -18,7 +18,7 @@ return [
         'token' => env('POSTMARK_TOKEN'),
     ],
     'xendit' => [
-        'secret_key' => env('XENDIT_SECRET_KEY'),
+        'secret' => env('XENDIT_API_KEY'),
     ],
     'ses' => [
         'key' => env('AWS_ACCESS_KEY_ID'),

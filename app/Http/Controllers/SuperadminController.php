@@ -388,4 +388,56 @@ public function exportPdf(Request $request)
 
     return $pdf->download('laporan-penjualan.pdf');
 }
+public function chartPenjualanPerTenantMingguan(Request $request)
+{
+    $start = $request->start_date
+        ? Carbon::parse($request->start_date)->startOfDay()
+        : now()->subWeeks(8)->startOfDay();
+
+    $end = $request->end_date
+        ? Carbon::parse($request->end_date)->endOfDay()
+        : now()->endOfDay();
+
+    $rows = DB::table('orders as o')
+        ->join('detailorders as d', 'd.orders_id', '=', 'o.id')
+        ->join('produks as pr', 'pr.id', '=', 'd.produks_id')
+        ->join('tenants as t', 't.id', '=', 'pr.tenants_id')
+        ->where('o.order_status', 'selesai')
+        ->whereBetween('o.order_tanggal', [$start, $end])
+        ->selectRaw("
+            t.id as tenant_id,
+            t.tenant_name,
+            YEARWEEK(o.order_tanggal, 3) as yearweek,
+            SUM(d.total_harga) as total
+        ")
+        ->groupBy('tenant_id', 'tenant_name', 'yearweek')
+        ->orderBy('yearweek')
+        ->get();
+
+    $weeks = $rows->pluck('yearweek')->unique()->values();
+
+    $labels = $weeks->map(function ($yw) {
+        $year = (int) substr((string)$yw, 0, 4);
+        $week = (int) substr((string)$yw, 4, 2);
+        return sprintf('%d-W%02d', $year, $week);
+    });
+
+    $tenants = $rows->groupBy('tenant_id')->map(function ($items) use ($weeks) {
+        $name = $items->first()->tenant_name;
+
+        $byWeek = $items->keyBy('yearweek')->map(fn($r) => (float) $r->total);
+
+        $data = $weeks->map(fn($yw) => $byWeek[$yw] ?? 0)->values();
+
+        return [
+            'label' => $name,
+            'data'  => $data,
+        ];
+    })->values();
+
+    return response()->json([
+        'labels'   => $labels,
+        'datasets' => $tenants,
+    ]);
+}
 }

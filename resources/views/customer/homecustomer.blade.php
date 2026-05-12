@@ -22,13 +22,13 @@
 
         {{-- GUEST INFO --}}
         <div id="guest-info" class="hidden mb-5 bg-blue-50 text-blue-700 px-4 py-3 rounded-lg text-sm border border-blue-200 animate-bounce-in">
-            Kamu sedang melihat sebagai <b>Guest</b>. Untuk memesan menu, silakan
+            Saat ini anda berada dalam mode <b>Guest</b>. Untuk memesan menu, silakan
             <a href="{{ route('login') }}" class="underline font-semibold hover:text-blue-900 transition">Login</a>.
         </div>
 
         {{-- TITLE --}}
         <h2 class="text-2xl font-extrabold text-slate-800 mb-4 animate-fade-in">
-            {{ request('keyword') ? 'Hasil Pencarian Menu' : 'Rekomendasi Penjual' }}
+            {{ request('keyword') ? 'Hasil Pencarian Menu' : 'Rekomendasi Tenant' }}
         </h2>
 
         {{-- LIST --}}

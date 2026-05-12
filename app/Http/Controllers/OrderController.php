@@ -86,16 +86,30 @@ class OrderController extends Controller
         $order = Order::findOrFail($id);
         $order->order_status = 'diproses';
         $order->save();
+        if ($order->transaksi && strtolower($order->transaksi->metode_pembayaran) === 'cash') {
+        $order->transaksi->status_pembayaran = 'paid';
+        $order->transaksi->waktu_bayar = now();
+        $order->transaksi->save();
+    }
         return $this->afterUpdate($request, 'Pesanan telah diproses.');
     }
+public function pesananReady($id, Request $request)
+{
+    $order = Order::findOrFail($id);
 
+    $order->order_status = 'siap';
+
+    $order->save();
+
+    return $this->afterUpdate($request, 'Pesanan siap diambil.');
+}
     public function pesananComplete($id, Request $request)
 {
     $order = Order::findOrFail($id);
     $order->order_status = 'selesai';
     $order->save();
     if ($order->transaksi) {
-        $order->transaksi->status_pembayaran = 'paid'; // GANTI DARI 'completed' KE 'paid'!
+        $order->transaksi->status_pembayaran = 'paid';
         $order->transaksi->waktu_bayar = now();
         $order->transaksi->save();
     }
@@ -183,6 +197,31 @@ public function historyShow($orderId, Request $request)
                 ->where('customers_id', $customer->id)
                 ->with(['details.produk', 'details.variant', 'transaksi'])
                 ->firstOrFail();
+
+    // Tambahan logic QRIS: jika pembayaran masih pending, redirect ke QRIS!
+    $transaksi = $order->transaksi;
+    $token = $request->input('token') ?? $request->query('token');
+    if (
+        strtolower($transaksi->metode_pembayaran ?? '') === 'qris'
+        && strtolower($transaksi->status_pembayaran ?? '') !== 'paid'
+    ) {
+        // Redirect ke halaman QRIS, kirim order_id & token
+        return redirect()->route('customer.payment.qris', [
+            'order_id' => $order->id,
+            'token' => $token
+        ]);
+    }
+
+    // Tambahan logic cash: jika order_status sudah diproses, otomatis status_pembayaran jadi paid
+    if (
+        strtolower($transaksi->metode_pembayaran ?? '') === 'cash'
+        && strtolower($order->order_status) === 'diproses'
+        && strtolower($transaksi->status_pembayaran) !== 'paid'
+    ) {
+        $transaksi->status_pembayaran = 'paid';
+        $transaksi->waktu_bayar = now();
+        $transaksi->save();
+    }
 
     if ($request->expectsJson() || $request->wantsJson() || $request->is('api/*')) {
         return response()->json(['order' => $order], 200);

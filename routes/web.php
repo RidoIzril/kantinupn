@@ -51,6 +51,8 @@ Route::prefix('customer')->group(function(){
     Route::get('/customer/chat/{userId}', [ChatController::class, 'room'])->name('chat.room');
     Route::get('/customer/chat/get/{userId}', [ChatController::class, 'getChat']);
     Route::post('/customer/chat/send', [ChatController::class, 'send']);
+    Route::get('/chat/unread-by-tenant', [ChatController::class, 'unreadByTenant']);
+    Route::get('/chat/unread-count', [ChatController::class, 'unreadCount']);
 
 
     Route::get('/customer/profile', [CusController::class, 'show'])->name('profile.profilecustomer');
@@ -58,6 +60,7 @@ Route::prefix('customer')->group(function(){
     Route::put('/customer/profile/password', [CusController::class, 'updatePassword'])->name('profile.profilecustomer.password');
 
     // Cart
+    Route::get('/customer/cart/summary', [CartController::class, 'summary'])->name('cart.summary');
     Route::get('/customer/keranjang', [CartController::class, 'index'])->name('carts.cartcustomer');
     Route::post('/customer/keranjang/add', [CartController::class, 'add'])->name('cart.add');
     Route::patch('/customer/keranjang/update', [CartController::class, 'update'])->name('cart.update');
@@ -121,6 +124,7 @@ Route::prefix('penjual')->group(function () {
     Route::get('/order', [OrderController::class, 'pesanan'])->name('penjual.order.index');
     Route::get('/order/{id}', [OrderController::class, 'pesananShow'])->name('penjual.order.show');
     Route::post('/order/{id}/process', [OrderController::class, 'pesananProcess'])->name('penjual.order.process');
+    Route::post('/order/{id}/ready', [OrderController::class, 'pesananReady'])->name('penjual.order.ready');
     Route::post('/order/{id}/complete', [OrderController::class, 'pesananComplete'])->name('penjual.order.complete');
     Route::post('/order/{id}/cancel', [OrderController::class, 'pesananCancel'])->name('penjual.order.cancel');
 
@@ -174,6 +178,8 @@ Route::prefix('superadmin')
 
     Route::get('/dashboard', [SuperadminController::class, 'home'])
         ->name('homesuperadmin');
+    Route::get('/chart/penjualan-mingguan', [SuperadminController::class, 'chartPenjualanPerTenantMingguan'])
+        ->name('superadmin.chart.penjualan_mingguan');
 
    Route::get('/kategori', [CategoryController::class, 'index'])
         ->name('kategori.list_kategori');

@@ -163,15 +163,21 @@ document.addEventListener('DOMContentLoaded', function () {
     const orderType = document.getElementById('order_type');
     const deliveryFields = document.getElementById('delivery-fields');
     const dineinFields = document.getElementById('dinein-fields');
+    const nomorMeja = document.querySelector('input[name="nomor_meja"]');
+    const alamat = document.querySelector('textarea[name="alamat"]');
 
     function toggleFields() {
         if (orderType && deliveryFields && dineinFields) {
             if (orderType.value === 'Delivery') {
                 deliveryFields.classList.remove('hidden');
                 dineinFields.classList.add('hidden');
+                if (alamat) alamat.required = true;
+                if (nomorMeja) nomorMeja.required = false;
             } else if (orderType.value === 'Dine In') {
                 deliveryFields.classList.add('hidden');
                 dineinFields.classList.remove('hidden');
+                if (alamat) alamat.required = false;
+                if (nomorMeja) nomorMeja.required = true;
             } else {
                 deliveryFields.classList.add('hidden');
                 dineinFields.classList.add('hidden');

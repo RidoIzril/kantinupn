@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Order;
 use App\Models\Transaksi;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -9,57 +10,65 @@ use Illuminate\Support\Facades\Log;
 class XenditWebhookController extends Controller
 {
     public function handle(Request $request)
-{
-    $data = $request->all();
+    {
+        $data = $request->all();
+        Log::info('WEBHOOK MASUK', $data);
 
-    \Log::info('WEBHOOK MASUK', $data);
-
-    // ❗ WAJIB ADA external_id
-    if (!isset($data['external_id'])) {
-        return response()->json(['status' => 'ignored'], 200);
-    }
-
-    $externalId = $data['external_id']; // order-36-xxxx
-    $status     = strtolower($data['status'] ?? '');
-
-    // 🔥 AMBIL ORDER ID DARI external_id
-    preg_match('/order-(\d+)/', $externalId, $match);
-    $orderId = $match[1] ?? null;
-
-    if (!$orderId) {
-        return response()->json(['status' => 'invalid'], 200);
-    }
-
-    // 🔥 CARI TRANSAKSI BERDASARKAN orders_id
-    $transaksi = \App\Models\Transaksi::where('orders_id', $orderId)->first();
-
-    if (!$transaksi) {
-        \Log::error('TRANSAKSI GA KETEMU', ['order_id' => $orderId]);
-        return response()->json(['status' => 'not found'], 200);
-    }
-
-    // 🔥 UPDATE STATUS
-    if ($status === 'paid') {
-
-        $transaksi->status_pembayaran = 'paid';
-        $transaksi->waktu_bayar = now();
-
-        if ($transaksi->order) {
-            $transaksi->order->order_status = 'selesai';
-            $transaksi->order->save();
+        // Xendit mengirim external_id, contoh: order-20-1778075000
+        $externalId = $data['external_id'] ?? null;
+        if (!$externalId) {
+            Log::warning('Webhook diabaikan: external_id tidak ada');
+            return response()->json(['status' => 'ignored'], 200);
         }
 
-    } elseif ($status === 'expired') {
+        $status = strtolower($data['status'] ?? '');
 
-        $transaksi->status_pembayaran = 'expired';
+        // Ambil orderId dari external_id: order-(\d+)-
+        preg_match('/order-(\d+)-?/', $externalId, $match);
+        $orderId = $match[1] ?? null;
 
-    } else {
+        if (!$orderId) {
+            Log::warning('Webhook invalid: gagal parse orderId dari external_id', ['external_id' => $externalId]);
+            return response()->json(['status' => 'invalid'], 200);
+        }
 
-        $transaksi->status_pembayaran = 'pending';
+        // Cari transaksi berdasarkan orders_id
+        $transaksi = Transaksi::where('orders_id', $orderId)
+            ->where('metode_pembayaran', 'qris')
+            ->first();
+
+        if (!$transaksi) {
+            Log::error('TRANSAKSI GA KETEMU', ['order_id' => $orderId]);
+            return response()->json(['status' => 'not found'], 200);
+        }
+
+        // Update transaksi sesuai status dari Xendit
+        if ($status === 'paid') {
+            $transaksi->status_pembayaran = 'paid';
+            $transaksi->waktu_bayar = now();
+            $transaksi->save();
+
+            // Update order status jadi proses
+            $order = Order::find($orderId);
+            if ($order) {
+                $order->order_status = 'diproses';
+                $order->save();
+            }
+
+            Log::info('Webhook PAID: transaksi & order updated', ['order_id' => $orderId]);
+        } elseif ($status === 'expired') {
+            $transaksi->status_pembayaran = 'expired';
+            $transaksi->save();
+            Log::info('Webhook EXPIRED: transaksi updated', ['order_id' => $orderId]);
+        } else {
+            // biarkan pending, jangan overwrite kalau sudah paid
+            if (strtolower($transaksi->status_pembayaran ?? '') !== 'paid') {
+                $transaksi->status_pembayaran = 'pending';
+                $transaksi->save();
+            }
+            Log::info('Webhook status lain: transaksi dibiarkan/pending', ['order_id' => $orderId, 'status' => $status]);
+        }
+
+        return response()->json(['status' => 'success'], 200);
     }
-
-    $transaksi->save();
-
-    return response()->json(['status' => 'success']);
-}
 }

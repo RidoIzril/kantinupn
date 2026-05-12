@@ -11,7 +11,7 @@
         </button>
 
         <div class="flex items-center gap-2">
-            <img src="{{ asset('template/dist/assets/compiled/png/LogoKantin.png') }}"
+            <img src="{{ asset('template/dist/assets/compiled/png/Logobaru.png') }}"
                  class="w-7 h-7 object-contain" alt="Logo">
             <span class="font-semibold text-slate-700">Superadmin</span>
         </div>
@@ -34,7 +34,7 @@
 
     {{-- LOGO --}}
     <div class="flex items-center gap-3 px-6 py-5 border-b border-green-700">
-        <img src="{{ asset('template/dist/assets/compiled/png/LogoKantin.png') }}"
+        <img src="{{ asset('template/dist/assets/compiled/png/Logobaru.png') }}"
              class="w-10 h-10 object-contain" alt="Logo">
         <div>
             <h1 class="text-lg font-bold">NKRI</h1>
@@ -42,49 +42,44 @@
         </div>
     </div>
 
+    @php
+        // helper class biar konsisten (aktif tidak menggeser posisi)
+        $linkBase = 'menu-link group flex items-center gap-3 px-4 py-2 rounded-lg transition-all duration-200 ease-out';
+        $linkIdle = 'text-green-200 hover:bg-green-700 hover:text-white active:scale-[0.98]';
+        $linkActive = 'bg-green-700 text-white shadow-md ring-1 ring-white/10';
+        // Optional: indikator kiri biar kerasa aktif tanpa geser
+        $activeIndicator = 'relative before:content-[""] before:absolute before:left-0 before:top-2 before:bottom-2 before:w-1 before:rounded-r before:bg-white/70';
+    @endphp
+
     {{-- MENU --}}
     <nav class="flex-1 px-4 py-6 space-y-2">
 
-        {{-- Dashboard --}}
         <a href="{{ route('superadmin.homesuperadmin') }}"
-           class="menu-link group flex items-center gap-3 px-4 py-2 rounded-lg transition-all duration-200 ease-out
-           {{ request()->routeIs('superadmin.homesuperadmin')
-                ? 'bg-green-700 text-white shadow-md translate-x-1'
-                : 'text-green-200 hover:bg-green-700 hover:text-white hover:translate-x-1 active:scale-[0.98]' }}">
-            <i class="bi bi-speedometer2 text-lg transition-transform duration-200 group-hover:rotate-3"></i>
+           class="{{ $linkBase }} {{ request()->routeIs('superadmin.homesuperadmin') ? ($linkActive.' '.$activeIndicator) : $linkIdle }}">
+            <i class="bi bi-speedometer2 text-lg"></i>
             <span class="text-sm font-medium">Dashboard</span>
         </a>
 
-        {{-- Kategori --}}
         <a href="{{ route('superadmin.kategori.list_kategori') }}"
-           class="menu-link group flex items-center gap-3 px-4 py-2 rounded-lg transition-all duration-200 ease-out
-           {{ request()->routeIs('superadmin.kategori.*')
-                ? 'bg-green-700 text-white shadow-md translate-x-1'
-                : 'text-green-200 hover:bg-green-700 hover:text-white hover:translate-x-1 active:scale-[0.98]' }}">
-            <i class="bi bi-tags text-lg transition-transform duration-200 group-hover:rotate-3"></i>
+           class="{{ $linkBase }} {{ request()->routeIs('superadmin.kategori.*') ? ($linkActive.' '.$activeIndicator) : $linkIdle }}">
+            <i class="bi bi-tags text-lg"></i>
             <span class="text-sm font-medium">Kategori</span>
         </a>
 
         <a href="{{ route('superadmin.laporan.index') }}"
-        class="menu-link group flex items-center gap-3 px-4 py-2 rounded-lg transition-all duration-200 ease-out
-                text-green-200 hover:bg-green-700 hover:text-white hover:translate-x-1 active:scale-[0.98]">
-            <i class="bi bi-bar-chart-line text-lg transition-transform duration-200 group-hover:rotate-3"></i>
+           class="{{ $linkBase }} {{ request()->routeIs('superadmin.laporan.*') ? ($linkActive.' '.$activeIndicator) : $linkIdle }}">
+            <i class="bi bi-bar-chart-line text-lg"></i>
             <span class="text-sm font-medium">Laporan Penjualan</span>
         </a>
 
-        {{-- Akun Penjual --}}
         <a href="{{ route('superadmin.penjual.index') }}"
-           class="menu-link group flex items-center gap-3 px-4 py-2 rounded-lg transition-all duration-200 ease-out
-           {{ request()->routeIs('superadmin.penjual.*')
-                ? 'bg-green-700 text-white shadow-md translate-x-1'
-                : 'text-green-200 hover:bg-green-700 hover:text-white hover:translate-x-1 active:scale-[0.98]' }}">
-            <i class="bi bi-shop text-lg transition-transform duration-200 group-hover:rotate-3"></i>
+           class="{{ $linkBase }} {{ request()->routeIs('superadmin.penjual.*') ? ($linkActive.' '.$activeIndicator) : $linkIdle }}">
+            <i class="bi bi-shop text-lg"></i>
             <span class="text-sm font-medium">Akun Penjual</span>
         </a>
 
         <hr class="border-green-700 my-4">
 
-        {{-- Logout --}}
         <button onclick="logout()"
                 class="w-full flex items-center gap-3 px-4 py-2 rounded-lg
                        text-red-300 hover:bg-red-500 hover:text-white transition-all duration-200 ease-out mt-4 active:scale-[0.98]">
@@ -93,7 +88,6 @@
         </button>
     </nav>
 
-    {{-- FOOTER --}}
     <div class="px-6 py-4 border-t border-green-700 text-xs text-green-300">
         © {{ date('Y') }} Kantin NKRI
     </div>
@@ -116,7 +110,6 @@ function toggleSidebar() {
     }
 }
 
-// click ring effect biar sama feel customer/penjual
 document.querySelectorAll('.menu-link').forEach(link => {
     link.addEventListener('click', () => {
         link.classList.add('ring-2', 'ring-white/30');

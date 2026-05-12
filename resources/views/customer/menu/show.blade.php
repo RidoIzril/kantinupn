@@ -1,4 +1,6 @@
 @extends('layouts.app')
+@section('use_back_button', true)
+@section('back_url', route('customer.homecustomer', ['token' => request('token')]))
 
 @section('content')
 <div class="flex min-h-screen bg-gray-100">
@@ -152,6 +154,32 @@
         </div>
     </div>
 </div>
+
+{{-- ✅ BOTTOM CART BAR (Shopee-like) --}}
+<a id="bottomCartBar"
+   href="{{ route('carts.cartcustomer', ['token' => request('token')]) }}"
+   class="fixed bottom-0 left-0 right-0 md:left-64 z-50 hidden">
+    <div class="max-w-6xl mx-auto px-4 pb-4">
+        <div class="bg-green-700 text-white rounded-xl shadow-lg px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="relative">
+                    <i class="bi bi-cart3 text-xl"></i>
+                    <span id="cartCountBadge"
+                          class="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full px-2 py-0.5">0</span>
+                </div>
+                <div class="leading-tight">
+                    <div class="text-sm font-semibold">Keranjang</div>
+                    <div class="text-xs opacity-90"><span id="cartCountText">0</span> item</div>
+                </div>
+            </div>
+
+            <div class="text-right">
+                <div class="text-xs opacity-90">Total</div>
+                <div class="text-base font-bold" id="cartTotalText">Rp 0</div>
+            </div>
+        </div>
+    </div>
+</a>
 
 {{-- ⚠️ SEMUA BAGIAN MODAL & JS TIDAK DIUBAH --}}
 
@@ -370,6 +398,71 @@ function goToChat(penjualId) {
         // pastikan hidden token terisi untuk flow backend lama
         const hidden = document.getElementById('modalToken');
         if (hidden && !hidden.value) hidden.value = token;
+    });
+})();
+
+/* ===========================
+   ✅ CART BAR 
+   =========================== */
+function formatRupiah(n) {
+    return "Rp " + new Intl.NumberFormat('id-ID').format(Number(n || 0));
+}
+
+function getToken() {
+    // prioritas: query string token, lalu localStorage
+    const url = new URL(window.location.href);
+    return url.searchParams.get('token') || localStorage.getItem('token') || "";
+}
+
+function refreshCartBar() {
+    const token = getToken();
+
+    fetch(`{{ route('cart.summary') }}?token=${encodeURIComponent(token)}`, {
+        headers: { 'Accept': 'application/json' }
+    })
+    .then(res => res.json())
+    .then(data => {
+        const count = Number(data.count || 0);
+        const total = Number(data.total || 0);
+
+        const bar = document.getElementById('bottomCartBar');
+        const badge = document.getElementById('cartCountBadge');
+        const countText = document.getElementById('cartCountText');
+        const totalText = document.getElementById('cartTotalText');
+
+        if (!bar || !badge || !countText || !totalText) return;
+
+        badge.textContent = count;
+        countText.textContent = count;
+        totalText.textContent = formatRupiah(total);
+
+        if (count > 0) {
+            bar.classList.remove('hidden');
+            document.body.style.paddingBottom = '90px';
+        } else {
+            bar.classList.add('hidden');
+            document.body.style.paddingBottom = '';
+        }
+    })
+    .catch(() => {});
+}
+
+document.addEventListener('DOMContentLoaded', refreshCartBar);
+
+// ✅ TAMBAHAN: pastikan href bottom cart bar selalu membawa token (dari query atau localStorage)
+(function fixBottomCartBarHref() {
+    document.addEventListener('DOMContentLoaded', function () {
+        const bar = document.getElementById('bottomCartBar');
+        if (!bar) return;
+
+        const token = getToken();
+        if (!token) return;
+
+        try {
+            const u = new URL(bar.getAttribute('href'), window.location.origin);
+            u.searchParams.set('token', token);
+            bar.setAttribute('href', u.toString());
+        } catch (e) {}
     });
 })();
 </script>

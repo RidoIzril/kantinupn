@@ -22,16 +22,28 @@
                     <td class="py-2 px-4">{{ $order->id }}</td>
                     <td class="py-2 px-4">{{ $order->order_tanggal ?? $order->created_at }}</td>
                     <td class="py-2 px-4">Rp {{ number_format($order->total_harga, 0, ',', '.') }}</td>
+
                     <td class="py-2 px-4">
-                        <span class="inline-block px-3 py-1 text-xs rounded-full 
-                            @if($order->order_status=='pending') bg-yellow-100 text-yellow-800
-                            @elseif($order->order_status=='diproses') bg-blue-100 text-blue-800
-                            @elseif($order->order_status=='selesai') bg-green-100 text-green-800
-                            @elseif($order->order_status=='batal') bg-red-100 text-red-800
-                            @else bg-gray-100 text-gray-800 @endif">
+
+                        @php
+                            $status = strtolower($order->order_status);
+
+                            $color = match($status) {
+                                'pending' => 'bg-yellow-100 text-yellow-800',
+                                'diproses' => 'bg-blue-100 text-blue-800',
+                                'siap' => 'bg-pink-100 text-purple-800',
+                                'selesai' => 'bg-green-100 text-green-800',
+                                'batal' => 'bg-red-100 text-red-800',
+                                default => 'bg-gray-100 text-gray-800'
+                            };
+                        @endphp
+
+                        <span class="inline-block px-3 py-1 text-xs rounded-full {{ $color }}">
                             {{ ucfirst($order->order_status) }}
                         </span>
+
                     </td>
+
                     <td class="py-2 px-4">
                         <a href="{{ route('orders.history.show', [$order->id, 'token' => request('token')]) }}"
                            class="inline-block px-4 py-1.5 rounded bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow transition">
@@ -41,7 +53,9 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="5" class="text-center py-6 text-gray-400">Belum ada riwayat pesanan.</td>
+                    <td colspan="5" class="text-center py-6 text-gray-400">
+                        Belum ada riwayat pesanan.
+                    </td>
                 </tr>
             @endforelse
             </tbody>
@@ -50,37 +64,69 @@
 
     {{-- Mobile CARD view --}}
     <div class="space-y-5 md:hidden">
+
         @forelse($orders as $order)
+
+            @php
+                $status = strtolower($order->order_status);
+
+                $color = match($status) {
+                    'pending' => 'bg-yellow-100 text-yellow-800',
+                    'diproses' => 'bg-blue-100 text-blue-800',
+                    'siap' => 'bg-pink-100 text-purple-800',
+                    'selesai' => 'bg-green-100 text-green-800',
+                    'batal' => 'bg-red-100 text-red-800',
+                    default => 'bg-gray-100 text-gray-800'
+                };
+            @endphp
+
             <div class="bg-white shadow rounded-2xl border px-5 py-4 flex flex-col gap-2">
+
                 <div class="flex justify-between items-center">
-                    <strong class="text-slate-700">#{{ $order->id }}</strong>
-                    <span class="inline-block px-3 py-1 text-xs rounded-full 
-                        @if($order->order_status=='pending') bg-yellow-100 text-yellow-800
-                        @elseif($order->order_status=='diproses') bg-blue-100 text-blue-800
-                        @elseif($order->order_status=='selesai') bg-green-100 text-green-800
-                        @elseif($order->order_status=='batal') bg-red-100 text-red-800
-                        @else bg-gray-100 text-gray-800 @endif">
+
+                    <strong class="text-slate-700">
+                        #{{ $order->id }}
+                    </strong>
+
+                    <span class="inline-block px-3 py-1 text-xs rounded-full {{ $color }}">
                         {{ ucfirst($order->order_status) }}
                     </span>
+
                 </div>
-                <div><span class="text-gray-500 text-xs">Tanggal:</span><br>
-                    <span class="font-semibold">{{ $order->order_tanggal ?? $order->created_at }}</span>
+
+                <div>
+                    <span class="text-gray-500 text-xs">Tanggal:</span><br>
+
+                    <span class="font-semibold">
+                        {{ $order->order_tanggal ?? $order->created_at }}
+                    </span>
                 </div>
-                <div><span class="text-gray-500 text-xs">Total:</span><br>
-                    <span class="font-semibold text-green-700">Rp {{ number_format($order->total_harga, 0, ',', '.') }}</span>
+
+                <div>
+                    <span class="text-gray-500 text-xs">Total:</span><br>
+
+                    <span class="font-semibold text-green-700">
+                        Rp {{ number_format($order->total_harga, 0, ',', '.') }}
+                    </span>
                 </div>
+
                 <div>
                     <a href="{{ route('orders.history.show', [$order->id, 'token' => request('token')]) }}"
                        class="inline-block w-full mt-3 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold text-center shadow transition">
                         Lihat Detail
                     </a>
                 </div>
+
             </div>
+
         @empty
+
             <div class="bg-white rounded-2xl p-8 text-center text-gray-400 border border-slate-200">
                 Belum ada riwayat pesanan.
             </div>
+
         @endforelse
+
     </div>
 </div>
 @endsection

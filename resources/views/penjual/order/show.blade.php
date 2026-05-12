@@ -57,10 +57,11 @@
         <div class="mb-3">
             <b class="text-green-900">Status:</b>
             @php
-                $status = strtolower($order->order_status);
+            $status = strtolower($order->order_status);
                 $color = match($status) {
                     'pending' => 'bg-yellow-100 text-yellow-800',
                     'diproses' => 'bg-blue-100 text-blue-800',
+                    'siap' => 'bg-cyan-100 text-cyan-800',
                     'selesai' => 'bg-green-100 text-green-800',
                     'batal' => 'bg-red-100 text-red-800',
                     default => 'bg-gray-100 text-gray-800'
@@ -95,32 +96,87 @@
             <b>Total: <span class="text-green-700">Rp {{ number_format($order->total_harga, 0, ',', '.') }}</span></b>
         </div>
     </div>
-    <div class="flex gap-2 justify-end">
-        @if(strtolower($order->order_status) == 'selesai' || strtolower($order->order_status) == 'batal')
-            <a href="{{ route('penjual.order.index', ['token' => request('token')]) }}"
-   class="inline-block bg-gray-500 hover:bg-gray-600 px-5 py-2 rounded text-white font-semibold shadow transition">
-    Kembali
-</a>
-        @else
-            <form method="POST" action="{{ route('penjual.order.process', $order->id) }}" class="inline">
-                @csrf
-                <button type="submit" class="inline-block bg-yellow-400 hover:bg-yellow-500 px-5 py-2 rounded text-white font-semibold shadow transition">
-                    Proses
-                </button>
-            </form>
-            <form method="POST" action="{{ route('penjual.order.complete', $order->id) }}" class="inline">
-                @csrf
-                <button type="submit" class="inline-block bg-green-600 hover:bg-green-700 px-5 py-2 rounded text-white font-semibold shadow transition">
-                    Selesai
-                </button>
-            </form>
-            <form method="POST" action="{{ route('penjual.order.cancel', $order->id) }}" class="inline" onsubmit="return confirm('Batalkan pesanan ini?')">
-                @csrf
-                <button type="submit" class="inline-block bg-red-600 hover:bg-red-700 px-5 py-2 rounded text-white font-semibold shadow transition">
-                    Batal
-                </button>
-            </form>
-        @endif
-    </div>
+    <div class="flex gap-2 justify-end flex-wrap">
+
+    {{-- STATUS SELESAI / BATAL --}}
+    @if(
+        strtolower($order->order_status) == 'selesai'
+        || strtolower($order->order_status) == 'batal'
+    )
+
+        <a href="{{ route('penjual.order.index', ['token' => request('token')]) }}"
+           class="inline-block bg-gray-500 hover:bg-gray-600 px-5 py-2 rounded text-white font-semibold shadow transition">
+            Kembali
+        </a>
+
+    {{-- STATUS PENDING --}}
+    @elseif(strtolower($order->order_status) == 'pending')
+
+        {{-- BUTTON DIPROSES --}}
+        <form method="POST"
+              action="{{ route('penjual.order.process', $order->id) }}"
+              class="inline">
+
+            @csrf
+
+            <button type="submit"
+                    class="inline-block bg-yellow-500 hover:bg-yellow-600 px-5 py-2 rounded text-white font-semibold shadow transition">
+                Diproses
+            </button>
+
+        </form>
+
+        {{-- BUTTON BATAL --}}
+        <form method="POST"
+              action="{{ route('penjual.order.cancel', $order->id) }}"
+              class="inline"
+              onsubmit="return confirm('Batalkan pesanan ini?')">
+
+            @csrf
+
+            <button type="submit"
+                    class="inline-block bg-red-600 hover:bg-red-700 px-5 py-2 rounded text-white font-semibold shadow transition">
+                Batal
+            </button>
+
+        </form>
+
+    {{-- STATUS DIPROSES --}}
+    @elseif(strtolower($order->order_status) == 'diproses')
+
+        {{-- BUTTON SIAP --}}
+        <form method="POST"
+              action="{{ route('penjual.order.ready', $order->id) }}"
+              class="inline">
+
+            @csrf
+
+            <button type="submit"
+                    class="inline-block bg-blue-600 hover:bg-blue-700 px-5 py-2 rounded text-white font-semibold shadow transition">
+                Siap
+            </button>
+
+        </form>
+
+    {{-- STATUS SIAP --}}
+    @elseif(strtolower($order->order_status) == 'siap')
+
+        {{-- BUTTON SELESAI --}}
+        <form method="POST"
+              action="{{ route('penjual.order.complete', $order->id) }}"
+              class="inline">
+
+            @csrf
+
+            <button type="submit"
+                    class="inline-block bg-green-600 hover:bg-green-700 px-5 py-2 rounded text-white font-semibold shadow transition">
+                Selesai
+            </button>
+
+        </form>
+
+    @endif
+
+</div>
 </div>
 @endsection

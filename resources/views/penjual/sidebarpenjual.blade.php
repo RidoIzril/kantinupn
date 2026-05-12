@@ -58,10 +58,25 @@
             <span class="text-sm font-medium">Pesanan</span>
         </a>
 
-        <a data-protected="1" href="{{ route('penjual.chat.list') }}"
-            class="menu-link group flex items-center gap-3 px-4 py-2 rounded-lg transition-all duration-200 ease-out
-                    text-green-200 hover:bg-green-700 hover:text-white hover:translate-x-1 active:scale-[0.98]">
-                <i class="bi bi-chat-dots text-lg transition-transform duration-200 group-hover:rotate-3"></i>
+        {{-- ✅ MENU CHAT + BADGE --}}
+        <a id="menu-chat"
+           data-protected="1"
+           href="{{ route('penjual.chat.list') }}"
+           class="menu-link group flex items-center gap-3 px-4 py-2 rounded-lg transition-all duration-200 ease-out
+                  text-green-200 hover:bg-green-700 hover:text-white hover:translate-x-1 active:scale-[0.98]">
+
+                <div class="relative">
+                    <i class="bi bi-chat-dots text-lg transition-transform duration-200 group-hover:rotate-3"></i>
+
+                    {{-- ✅ BADGE --}}
+                    <span id="chat-badge"
+                          class="hidden absolute -top-2 -right-3 min-w-5 h-5 px-1
+                                 flex items-center justify-center
+                                 rounded-full bg-red-500 text-white text-[10px] font-bold">
+                        0
+                    </span>
+                </div>
+
                 <span class="text-sm font-medium">Live Chat</span>
         </a>
         
@@ -69,7 +84,7 @@
             class="menu-link group flex items-center gap-3 px-4 py-2 rounded-lg transition-all duration-200 ease-out
                     text-green-200 hover:bg-green-700 hover:text-white hover:translate-x-1 active:scale-[0.98]">
                 <i class="bi bi-bar-chart-line text-lg transition-transform duration-200 group-hover:rotate-3"></i>
-                <span class="text-sm font-medium">Laporan</span>
+                <span class="text-sm font-medium">Laporan Penjualan</span>
         </a>
 
         <a data-protected="1" href="{{ route('penjual.profile.edit') }}"
@@ -95,6 +110,7 @@
 
 @push('scripts')
 <script>
+
 function toggleSidebar() {
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('sidebar-overlay');
@@ -113,70 +129,165 @@ function toggleSidebar() {
 }
 
 (function attachTokenAndActiveState() {
+
     const token = localStorage.getItem('token');
     const currentUrl = new URL(window.location.href);
 
     document.querySelectorAll('a[data-protected="1"]').forEach(a => {
+
         if (token) {
+
             const url = new URL(a.href, window.location.origin);
+
             url.searchParams.set('token', token);
+
             a.href = url.toString();
         }
 
         const aUrl = new URL(a.href, window.location.origin);
+
         if (aUrl.pathname === currentUrl.pathname) {
+
             a.classList.remove('text-green-200');
-            a.classList.add('bg-green-700', 'text-white', 'shadow-md', 'translate-x-1');
+
+            a.classList.add(
+                'bg-green-700',
+                'text-white',
+                'shadow-md',
+                'translate-x-1'
+            );
         }
 
         a.addEventListener('click', function () {
+
             a.classList.add('ring-2', 'ring-white/30');
-            setTimeout(() => a.classList.remove('ring-2', 'ring-white/30'), 220);
+
+            setTimeout(() => {
+                a.classList.remove('ring-2', 'ring-white/30');
+            }, 220);
 
             if (window.innerWidth < 768) {
+
                 setTimeout(() => toggleSidebar(), 120);
             }
         });
     });
 })();
 
-async function handleLogout() {
+{{-- ✅ UNREAD CHAT PENJUAL --}}
+function refreshUnreadChatPenjual() {
+
     const token = localStorage.getItem('token');
+
+    if (!token) return;
+
+    fetch(`/customer/chat/unread-count?token=${encodeURIComponent(token)}`, {
+        headers: {
+            'Accept': 'application/json'
+        },
+        cache: 'no-store'
+    })
+
+    .then(res => res.json())
+
+    .then(data => {
+
+        const badge = document.getElementById('chat-badge');
+
+        if (!badge) return;
+
+        const count = Number(data.count || 0);
+
+        if (count > 0) {
+
+            badge.classList.remove('hidden');
+
+            badge.textContent = count > 99
+                ? '99+'
+                : String(count);
+
+        } else {
+
+            badge.classList.add('hidden');
+
+            badge.textContent = '0';
+        }
+    })
+
+    .catch(err => {
+        console.log(err);
+    });
+}
+
+async function handleLogout() {
+
+    const token = localStorage.getItem('token');
+
     const logoutUrl = "{{ url('/api/logout') }}";
     const loginUrl  = "{{ url('/login') }}";
 
     try {
+
         if (token) {
+
             await fetch(logoutUrl, {
+
                 method: 'POST',
+
                 headers: {
                     'Accept': 'application/json',
                     'Authorization': `Bearer ${token}`
                 }
             });
         }
+
     } catch (e) {
+
         console.error(e);
+
     } finally {
+
         localStorage.removeItem('token');
         localStorage.removeItem('role');
+
         window.location.replace(loginUrl);
     }
 }
 
 window.addEventListener('resize', () => {
+
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('sidebar-overlay');
 
     if (window.innerWidth >= 768) {
+
         sidebar.classList.remove('-translate-x-full');
+
         overlay.classList.add('hidden');
+
         document.body.classList.remove('overflow-hidden');
+
     } else {
+
         sidebar.classList.add('-translate-x-full');
+
         overlay.classList.add('hidden');
+
         document.body.classList.remove('overflow-hidden');
     }
 });
+
+{{-- ✅ START REALTIME --}}
+document.addEventListener('DOMContentLoaded', function () {
+
+    refreshUnreadChatPenjual();
+
+    setInterval(refreshUnreadChatPenjual, 2000);
+
+    window.addEventListener('focus', refreshUnreadChatPenjual);
+
+    window.addEventListener('pageshow', refreshUnreadChatPenjual);
+});
+
 </script>
 @endpush

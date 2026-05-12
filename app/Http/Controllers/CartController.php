@@ -224,6 +224,42 @@ class CartController extends Controller
         return back()->with('success', 'Item berhasil dihapus');
     }
 
+    public function summary(Request $request)
+{
+    $token = $request->query('token');
+
+    $user = auth()->user();
+    if (!$user && $token) {
+        $accessToken = PersonalAccessToken::findToken($token);
+        $user = $accessToken?->tokenable;
+    }
+
+    if (!$user) {
+        return response()->json(['count' => 0, 'total' => 0], 200);
+    }
+
+    $customer = Customers::where('users_id', $user->id)->first();
+    if (!$customer) {
+        return response()->json(['count' => 0, 'total' => 0], 200);
+    }
+
+    // ambil cart milik customer (aktif)
+    $cart = Cart::where('customers_id', $customer->id)->first();
+    if (!$cart) {
+        return response()->json(['count' => 0, 'total' => 0], 200);
+    }
+
+    // ambil item dari cart_items
+    $items = CartItem::where('carts_id', $cart->id)->get();
+
+    $count = (int) $items->sum('jumlah');
+    $total = (int) $items->sum('subtotal');
+
+    return response()->json([
+        'count' => $count,
+        'total' => $total,
+    ], 200);
+}
    public function checkout(Request $request)
     {
         $customer = $this->resolveCustomer($request);
