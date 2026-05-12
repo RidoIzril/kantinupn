@@ -65,12 +65,13 @@
                             </div>
                             <div class="mt-3 md:mt-3 flex flex-col md:flex-row md:items-center md:gap-4">
                                 <textarea
-    name="catatan_menu[{{ $item->id }}]"
-    rows="1"
-    class="w-full md:w-3/4 border rounded-md px-3 py-2 text-sm bg-slate-50 focus:bg-white focus:outline-emerald-600 transition resize-none"
-    form="checkoutform"
-    placeholder="Catatan menu untuk {{ $item->produk->nama }}"
->{{ old('catatan_menu.' . $item->id, $item->catatan_menu ?? '') }}</textarea>
+                                        name="catatan_menu[{{ $item->id }}]"
+                                        rows="1"
+                                        class="w-full md:w-3/4 border rounded-md px-3 py-2 text-sm bg-slate-50 focus:bg-white focus:outline-emerald-600 transition resize-none"
+                                        form="checkoutform"
+                                        placeholder="Catatan menu untuk {{ $item->produk->nama }}"
+                                    >{{ old('catatan_menu.' . $item->id, $item->catatan_menu ?? '') }}</textarea>
+                                    
                                 <div class="md:hidden text-right text-emerald-600 font-extrabold text-lg mt-1">
                                     Rp {{ number_format($subtotal, 0, ',', '.') }}
                                 </div>

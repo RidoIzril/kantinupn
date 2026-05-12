@@ -3,10 +3,11 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthApiController;
+use App\Http\Controllers\Api\ProductApiController;
 use App\Http\Controllers\PenjualController;
 use App\Http\Controllers\SuperadminController;
 use App\Http\Controllers\XenditWebhookController;
-use App\Http\Controllers\PaymentController;
+
     
     Route::post('/login', [AuthApiController::class, 'login']);
     Route::post('/register', [AuthApiController::class, 'register']);
@@ -53,6 +54,18 @@ use App\Http\Controllers\PaymentController;
     Route::put('/penjual/profile/update', [PenjualController::class, 'profileUpdate']);
     Route::get('/penjual/notifications', [PenjualController::class, 'notifications']);
 
+    Route::prefix('products')->group(function () {
+
+    Route::get('/', [ProductApiController::class, 'index']);
+
+    Route::get('/{id}', [ProductApiController::class, 'show']);
+
+    Route::post('/store', [ProductApiController::class, 'store']);
+
+    Route::post('/update/{id}', [ProductApiController::class, 'update']);
+
+    Route::delete('/delete/{id}', [ProductApiController::class, 'destroy']);
+});
     Route::prefix('superadmin')->group(function () {
     Route::get('/penjual', [SuperadminController::class, 'apiIndexPenjual']);
     Route::post('/penjual', [SuperadminController::class, 'apiStorePenjual']);
