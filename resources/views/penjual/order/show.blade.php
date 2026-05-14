@@ -6,15 +6,12 @@
     <div class="bg-white rounded-lg shadow p-6 mb-6 border">
         <div class="mb-3">
             <b class="text-green-900 block mb-1">Customer:</b>
-            @if ($order->customer && $order->customer->nama)
+            @if ($order->customer && $order->customer->nama_lengkap)
                 <span class="inline-flex items-center gap-2">
-                    <span class="inline-flex justify-center items-center rounded-full h-8 w-8 bg-green-100 text-green-800 font-bold text-lg uppercase">
-                        {{ strtoupper(substr($order->customer->nama, 0, 1)) }}
-                    </span>
-                    <span class="text-green-900 font-semibold">{{ $order->customer->nama }}</span>
+                    <span class="text-green-900 font-semibold">{{ $order->customer->nama_lengkap }}</span>
                 </span>
-                @if ($order->customer->telepon)
-                <div class="text-slate-400 text-sm">Telp: {{ $order->customer->telepon }}</div>
+                @if ($order->customer->kontak)
+                <div class="text-slate-400 text-sm">Telp: {{ $order->customer->kontak }}</div>
                 @endif
             @else
                 <span class="text-gray-400">-</span>
@@ -55,7 +52,30 @@
         @endif
 
         <div class="mb-3">
-            <b class="text-green-900">Status:</b>
+    <b class="text-green-900">Metode Pembayaran:</b>
+    <span class="text-gray-700">
+        {{ strtoupper($order->transaksi->metode_pembayaran ?? '-') }}
+    </span>
+</div>
+
+<div class="mb-3">
+    <b class="text-green-900">Status Pembayaran:</b>
+    @php
+        $payStatus = strtolower($order->transaksi->status_pembayaran ?? '');
+        $payColor = match($payStatus) {
+            'paid'    => 'bg-green-100 text-green-800',
+            'pending' => 'bg-yellow-100 text-yellow-800',
+            'failed'  => 'bg-red-100 text-red-800',
+            default   => 'bg-gray-100 text-gray-800'
+        };
+    @endphp
+
+    <span class="inline-block px-3 py-1 rounded-full text-xs font-medium {{ $payColor }} capitalize">
+        {{ $order->transaksi->status_pembayaran ?? '-' }}
+    </span>
+</div>
+        <div class="mb-3">
+            <b class="text-green-900">Status Pesanan:</b>
             @php
             $status = strtolower($order->order_status);
                 $color = match($status) {

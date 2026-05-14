@@ -272,6 +272,7 @@ class CartController extends Controller
             'alamat'             => 'nullable|string',
             'catatan_menu'       => 'nullable|array',
             'catatan_menu.*'     => 'nullable|string',
+            'catatan'            => 'nullable|string',
             'token'              => 'nullable|string',
         ]);
 
@@ -358,7 +359,7 @@ class CartController extends Controller
                 $transaksiData = [
                     'orders_id'         => $order->id,
                     'metode_pembayaran' => $validated['metode_pembayaran'],
-                    'status_pembayaran' => $validated['metode_pembayaran'] === 'cash' ? 'paid' : 'pending',
+                    'status_pembayaran' => 'pending',
                     'jumlah_bayar'      => $total,
                     'waktu_bayar'       => $validated['metode_pembayaran'] === 'cash' ? now() : null,
                     'reference_payment' => null, // Untuk Xendit: isi di PaymentController

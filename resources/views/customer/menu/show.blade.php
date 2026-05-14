@@ -449,7 +449,7 @@ function refreshCartBar() {
 
 document.addEventListener('DOMContentLoaded', refreshCartBar);
 
-// ✅ TAMBAHAN: pastikan href bottom cart bar selalu membawa token (dari query atau localStorage)
+
 (function fixBottomCartBarHref() {
     document.addEventListener('DOMContentLoaded', function () {
         const bar = document.getElementById('bottomCartBar');
