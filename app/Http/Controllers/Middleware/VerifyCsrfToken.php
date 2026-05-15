@@ -12,7 +12,7 @@ class VerifyCsrfToken extends Middleware
      * @var array<int, string>
      */
     protected $except = [
-        // ISI DENGAN ROUTE WEBHOOK MU PERSIS SESUAI route:list !!!
+        //  sesuai route:list 
         'customer/xendit/webhook',
         'api/xendit/webhook',
         'xendit/webhook',
@@ -20,7 +20,7 @@ class VerifyCsrfToken extends Middleware
         'customer/xendit/*',
         'api/xendit/*',
         'xendit/*',
-        // atau jika di subdomain/tes lokal:
+        // tes lokal:
         '*xendit*',
     ];
 }

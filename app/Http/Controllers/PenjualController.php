@@ -113,7 +113,7 @@ class PenjualController extends Controller
                 ->where(function ($q) {
                     $q->where('t.status_pembayaran', 'failed')
                       ->orWhere('o.order_status', 'failed')
-                      ->orWhere('o.order_status', 'cancelled');
+                      ->orWhere('o.order_status', 'batal');
                 })->count('t.id');
 
             $transaksiSelesai = (clone $transaksiBase)

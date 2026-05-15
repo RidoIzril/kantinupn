@@ -9,9 +9,10 @@ use App\Http\Controllers\Api\CartApiController;
 use App\Http\Controllers\Api\PaymentApiController;
 use App\Http\Controllers\Api\OrderApiController;
 use App\Http\Controllers\Api\ChatApiController;
-
+use App\Http\Controllers\Api\PenjualApiController;
+use App\Http\Controllers\Api\SuperadminApiController;
 use App\Http\Controllers\PenjualController;
-use App\Http\Controllers\SuperadminController;
+use App\Http\Controllers\Api\CategoryApiController;
 use App\Http\Controllers\XenditWebhookController;
 
 // ================= AUTH =================
@@ -100,6 +101,9 @@ Route::prefix('penjual')->group(function () {
     Route::post('/orders/{id}/ready', [OrderApiController::class, 'penjualOrderReady']);
     Route::post('/orders/{id}/complete', [OrderApiController::class, 'penjualOrderComplete']);
     Route::post('/orders/{id}/cancel', [OrderApiController::class, 'penjualOrderCancel']);
+    Route::get('/laporan', [PenjualApiController::class, 'laporan']);
+    Route::get('/laporan/pdf', [PenjualApiController::class, 'exportPdf']);
+    Route::get('/laporan/{id}', [PenjualApiController::class, 'detailLaporan']);
 });
 
 // ================= PRODUCTS =================
@@ -121,29 +125,20 @@ Route::prefix('products')->group(function () {
 
 Route::prefix('cart')->group(function () {
 
-    // GET CART
     Route::get('/', [CartApiController::class, 'index']);
-
-    // ADD TO CART
     Route::post('/add', [CartApiController::class, 'add']);
-
-    // UPDATE CART
     Route::post('/update', [CartApiController::class, 'update']);
-
-    // DELETE CART
     Route::delete('/remove', [CartApiController::class, 'remove']);
-
-    // SUMMARY CART
     Route::get('/summary', [CartApiController::class, 'summary']);
-
-    // CHECKOUT
     Route::post('/checkout', [CartApiController::class, 'checkout']);
 });
+
 Route::prefix('payment')->group(function () {
-    Route::get('/qris', [PaymentApiController::class, 'qris']);           // ?order_id=...
-    Route::post('/qris', [PaymentApiController::class, 'qris']);          // { order_id: ... }
+    Route::get('/qris', [PaymentApiController::class, 'qris']);           
+    Route::post('/qris', [PaymentApiController::class, 'qris']);          
     Route::get('/qris/status', [PaymentApiController::class, 'checkQrisStatus']);
 });
+
 Route::prefix('customer')->group(function () {
     Route::get('/orders', [OrderApiController::class, 'customerOrders']);
     Route::get('/orders/{id}', [OrderApiController::class, 'customerOrderShow']);
@@ -164,7 +159,22 @@ Route::prefix('chat')->group(function () {
 
 Route::prefix('superadmin')->group(function () {
 
-    Route::get('/penjual', [SuperadminController::class, 'apiIndexPenjual']);
+    Route::get('/dashboard', [SuperadminApiController::class, 'dashboard']);
 
-    Route::post('/penjual', [SuperadminController::class, 'apiStorePenjual']);
+    Route::get('/penjual', [SuperadminApiController::class, 'penjualIndex']);
+    Route::post('/penjual', [SuperadminApiController::class, 'penjualStore']);
+    Route::put('/penjual/{id}', [SuperadminApiController::class, 'penjualUpdate']);
+    Route::patch('/penjual/{id}/status', [SuperadminApiController::class, 'penjualUpdateStatus']);
+    Route::delete('/penjual/{id}', [SuperadminApiController::class, 'penjualDestroy']);
+
+    Route::get('/laporan', [SuperadminApiController::class, 'laporan']);
+    Route::get('/laporan/pdf', [SuperadminApiController::class, 'exportPdf']);
+    Route::get('/chart/penjualan-mingguan', [SuperadminApiController::class, 'chartPenjualanPerTenantMingguan']);
+});
+
+Route::prefix('categories')->group(function () {
+    Route::get('/', [CategoryApiController::class, 'index']);
+    Route::post('/', [CategoryApiController::class, 'store']);
+    Route::put('/{id}', [CategoryApiController::class, 'update']);
+    Route::delete('/{id}', [CategoryApiController::class, 'destroy']);
 });
